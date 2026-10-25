@@ -166,6 +166,39 @@ describe('renderGuidePage: contact feature', () => {
   })
 })
 
+describe('renderGuidePage: AI notice', () => {
+  const DE_NOTE = '<p class="note"><b>Hinweis</b> Dieses Handbuch wurde mit Unterstützung von KI erstellt und mit dem laufenden System abgeglichen. Fehler sind trotzdem möglich.'
+  const EN_NOTE = '<p class="note"><b>Note</b> This guide was written with the help of AI and checked against the running system. Errors are still possible.'
+
+  function masthead(page: string): string {
+    return page.slice(page.indexOf('<header class="masthead">'), page.indexOf('</header>'))
+  }
+
+  it('shows the note in the masthead of both languages', () => {
+    expect(masthead(de)).toContain(DE_NOTE)
+    expect(masthead(en)).toContain(EN_NOTE)
+  })
+
+  it('gates only the sentence with the contact address', () => {
+    expect(de).toContain(`${DE_NOTE}<!--tw-feature:contact--> Hinweise bitte an <a href="mailto:__TW_SETTING_contact_email__">__TW_SETTING_contact_email__</a>.<!--/tw-feature:contact--></p>`)
+    expect(en).toContain(`${EN_NOTE}<!--tw-feature:contact--> Please report them to <a href="mailto:__TW_SETTING_contact_email__">__TW_SETTING_contact_email__</a>.<!--/tw-feature:contact--></p>`)
+  })
+
+  it('keeps the note, without a dangling address, when no contact is configured', () => {
+    const off = applyFeatures(de, { contact: false, privacy: true, llm: true })
+    expect(off).toContain(`${DE_NOTE}</p>`)
+    expect(off).not.toContain('Hinweise bitte an')
+    expect(off).not.toContain('mailto:')
+  })
+
+  it('shows no note on the privacy page', () => {
+    for (const page of [renderPrivacyShell('de', LOGO, '2026-10-22'), renderPrivacyShell('en', LOGO, '2026-10-22')]) {
+      expect(page).not.toContain('class="note"')
+      expect(page).not.toMatch(/KI erstellt|help of AI/)
+    }
+  })
+})
+
 describe('renderGuidePage: headings', () => {
   it('shifts headings down one level and prefixes their ids with the section id', () => {
     expect(de).toContain('<h2 id="upload--hochladen">Hochladen</h2>')
@@ -293,6 +326,10 @@ describe('guide.css', () => {
     expect(css).not.toContain('counter(step)')
     const html = renderGuidePage({ ...input('de'), sections: [{ id: 'upload', tocLabel: 'U', markdown: '3. drei\n4. vier\n' }] })
     expect(html).toContain('<ol start="3">')
+  })
+
+  it('sets the masthead note in the small sans of the meta row', () => {
+    expect(css).toMatch(/\.note \{[^}]*var\(--sans\)/)
   })
 
   it('does not clip marker badges at the image edge', () => {
