@@ -148,6 +148,9 @@ export const SubtitleRow = forwardRef<HTMLTableRowElement, Props>(function Subti
       const ms = ((parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0)) * 1000
       onUpdate(index, field, ms)
     } else {
+      // The field opens with the display name, so leaving it unchanged must not
+      // write that name over the speaker ID.
+      if (field === 'speaker' && editValue === speakerDisplay) return
       onUpdate(index, field, editValue)
     }
   }
