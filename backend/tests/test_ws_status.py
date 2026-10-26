@@ -252,6 +252,15 @@ async def test_a_failed_title_attempt_keeps_a_title_the_user_set_meanwhile():
 
 
 @pytest.mark.asyncio
+async def test_a_generated_title_does_not_overwrite_a_title_the_user_set_meanwhile():
+    async def user_renames_then_llm_answers(text):
+        await _set("txn-1", "UPDATE transcriptions SET title = 'Mine' WHERE id = ?")
+        return "Generated"
+
+    assert await _run_with_title_reply(AsyncMock(side_effect=user_renames_then_llm_answers)) == "Mine"
+
+
+@pytest.mark.asyncio
 async def test_list_shows_an_empty_title_as_null():
     """'' only tells the WebSocket the attempt is over; API clients keep seeing null."""
     async with get_db() as db:
