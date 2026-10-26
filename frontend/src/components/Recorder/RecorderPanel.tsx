@@ -88,23 +88,26 @@ export function RecorderPanel() {
   }, [state, blob, uploading, uploadError, file, handleUseRecording])
 
   const handleStart = useCallback(async () => {
-    // Play a short beep tone to signal recording start
-    try {
-      const ctx = new AudioContext()
-      await ctx.resume()
-      const oscillator = ctx.createOscillator()
-      const gain = ctx.createGain()
-      oscillator.connect(gain)
-      gain.connect(ctx.destination)
-      oscillator.frequency.value = 880
-      gain.gain.value = 0.3
-      oscillator.start()
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3)
-      oscillator.stop(ctx.currentTime + 0.3)
-      setTimeout(() => ctx.close(), 500)
-    } catch {
-      // Audio cue is best-effort
-    }
+    // Play a short beep tone to signal recording start. Detached: resume() never
+    // settles in Firefox without an audio output device, and must not block start().
+    void (async () => {
+      try {
+        const ctx = new AudioContext()
+        await ctx.resume()
+        const oscillator = ctx.createOscillator()
+        const gain = ctx.createGain()
+        oscillator.connect(gain)
+        gain.connect(ctx.destination)
+        oscillator.frequency.value = 880
+        gain.gain.value = 0.3
+        oscillator.start()
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3)
+        oscillator.stop(ctx.currentTime + 0.3)
+        setTimeout(() => ctx.close(), 500)
+      } catch {
+        // Audio cue is best-effort
+      }
+    })()
     await start()
   }, [start])
 
