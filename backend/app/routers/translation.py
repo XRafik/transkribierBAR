@@ -67,7 +67,11 @@ async def translate_transcription(
 
         same_language = translation_lang == body.target_language
         same_source_request = body.source is None or body.source == (cached_source or "original")
-        if translated_json and translated_json != "" and same_language and same_source_request:
+        if (
+            not body.force
+            and translated_json and translated_json != ""
+            and same_language and same_source_request
+        ):
             current_source_json = refined_json if cached_source == "refined" else result_json
             source_available = bool(current_source_json) and current_source_json != ""
             current_hash = (

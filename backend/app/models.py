@@ -222,6 +222,9 @@ class AnalysisRequest(BaseModel):
 class TranslationRequest(BaseModel):
     target_language: str
     source: Literal["original", "refined"] | None = None
+    # Translate again even when a translation for this language and source is
+    # stored, so an out-of-date one can be replaced.
+    force: bool = False
 
 
 class TranslationResult(BaseModel):

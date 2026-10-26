@@ -5,6 +5,7 @@ import { LanguageSelect } from '../LanguageSelect'
 import { PresetSelect } from '../PresetSelect/PresetSelect'
 import { singleConfiguredModel } from '../../utils/models'
 import { SpeakerFields } from './SpeakerFields'
+import { bundleSettings, presetSettings } from './presetSettings'
 
 export interface SettingsPanelValues {
   language: string
@@ -36,19 +37,7 @@ export function SettingsPanel({ values, onChange, saveError = null }: SettingsPa
   const setActiveBundleId = useStore((s) => s.setActiveBundleId)
 
   const handleLoadPreset = (presetId: string | null) => {
-    onChange({ selectedPresetId: presetId })
-    if (!presetId) return
-    const preset = transcriptionPresets.find((p) => p.id === presetId)
-    if (!preset) return
-    onChange({
-      language: preset.language || 'auto',
-      model: preset.model,
-      detectSpeakers: preset.min_speakers > 0 || preset.max_speakers > 0,
-      minSpeakers: preset.min_speakers || 1,
-      maxSpeakers: preset.max_speakers || 2,
-      initialPrompt: preset.initial_prompt || '',
-      hotwords: preset.hotwords || '',
-    })
+    onChange(presetSettings(presetId, transcriptionPresets))
   }
 
   const handleSavePreset = async (name: string) => {
@@ -67,12 +56,8 @@ export function SettingsPanel({ values, onChange, saveError = null }: SettingsPa
 
   const handleLoadBundle = (bundleId: string | null) => {
     setActiveBundleId(bundleId)
-    if (!bundleId) return
-    const bundle = bundles.find((b) => b.id === bundleId)
-    if (!bundle) return
-    if (bundle.transcription_preset_id) {
-      handleLoadPreset(bundle.transcription_preset_id)
-    }
+    const patch = bundleSettings(bundles.find((b) => b.id === bundleId), transcriptionPresets)
+    if (patch) onChange(patch)
   }
 
   const groupClass = 'flex flex-wrap items-end gap-3 border border-gray-700 rounded-md px-3 pt-1 pb-3'

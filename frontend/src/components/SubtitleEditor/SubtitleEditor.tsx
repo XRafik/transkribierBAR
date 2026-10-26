@@ -460,6 +460,14 @@ export function SubtitleEditor() {
     }
   }
 
+  // The server hands back a stored translation for the same language and source
+  // unchanged (a request without a source matches any), so replacing an
+  // out-of-date one has to be asked for explicitly.
+  const replacesStaleTranslation = !!translatedUtterances
+    && (translationStale || !translationSourceAvailable)
+    && translateLanguage === translationLanguage
+    && (!refinedUtterances || translateSource === translationSource)
+
   const handleTranslate = async () => {
     if (!transcriptionId) return
     setTranslating(true)
@@ -469,6 +477,7 @@ export function SubtitleEditor() {
         transcriptionId,
         translateLanguage,
         refinedUtterances ? translateSource : undefined,
+        replacesStaleTranslation,
       )
       setTranslatedUtterances(translationResult.utterances)
       setTranslationLanguage(translationResult.language)
@@ -929,6 +938,9 @@ export function SubtitleEditor() {
               <p className="text-xs text-indigo-400/80 mt-2">
                 {t('editor.translationWarningLong', { count: baseUtterances.length })}
               </p>
+            )}
+            {replacesStaleTranslation && (
+              <p className="text-xs text-amber-400 mt-2">{t('editor.translationReplacesStale')}</p>
             )}
             {translateError && (
               <p role="alert" className="text-xs text-red-400 mt-2">{translateError}</p>
