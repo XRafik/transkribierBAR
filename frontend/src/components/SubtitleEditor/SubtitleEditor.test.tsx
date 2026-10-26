@@ -1,9 +1,21 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import i18n from '../../i18n'
 import { useStore } from '../../store'
+import { api, ApiError } from '../../api/client'
 import { SubtitleEditor } from './SubtitleEditor'
 import type { TranscriptionResult } from '../../api/types'
+
+vi.mock('../../api/client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../api/client')>()
+  return {
+    ...actual,
+    api: {
+      saveTranscription: vi.fn(),
+      getTranscription: vi.fn(),
+    },
+  }
+})
 
 function transcript(): TranscriptionResult {
   return {
@@ -22,6 +34,7 @@ function transcript(): TranscriptionResult {
 }
 
 beforeEach(async () => {
+  vi.clearAllMocks()
   await i18n.changeLanguage('en')
   useStore.getState().reset()
   useStore.setState({
@@ -30,6 +43,17 @@ beforeEach(async () => {
     speakerMappings: { SPEAKER_00: 'Alice' },
   })
 })
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
+
+function renameFirstSpeaker(name: string) {
+  fireEvent.click(screen.getAllByTitle('Edit speaker name')[0])
+  const input = screen.getByDisplayValue('Alice')
+  fireEvent.change(input, { target: { value: name } })
+  fireEvent.blur(input)
+}
 
 describe('SubtitleEditor speaker field', () => {
   it('leaving the field with the shown name keeps the speaker ID and the transcript clean', () => {
@@ -110,5 +134,60 @@ describe('SubtitleEditor timestamp fields', () => {
     expect(useStore.getState().transcriptionResult).toBe(before)
     expect(useStore.getState().unsavedEdits).toBe(false)
     expect(screen.getByText('00:00:04')).toBeInTheDocument()
+  })
+})
+
+describe('SubtitleEditor saving and restoring', () => {
+  it('shows the server\'s reason when saving fails and keeps the edits for a retry', async () => {
+    vi.mocked(api.saveTranscription).mockRejectedValueOnce(new ApiError(500, 'boom'))
+    render(<SubtitleEditor />)
+    renameFirstSpeaker('Bob')
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('boom')
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeEnabled()
+    expect(useStore.getState().unsavedEdits).toBe(true)
+    expect(useStore.getState().transcriptionResult!.utterances[0].speaker).toBe('Bob')
+
+    let finishSave!: (value: { status: string }) => void
+    vi.mocked(api.saveTranscription).mockReturnValueOnce(new Promise((resolve) => { finishSave = resolve }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    expect(screen.queryByRole('alert')).toBeNull()
+    await act(async () => finishSave({ status: 'ok' }))
+    expect(useStore.getState().unsavedEdits).toBe(false)
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('shows a general message when saving fails without a server reason', async () => {
+    vi.mocked(api.saveTranscription).mockRejectedValueOnce(new Error('network'))
+    render(<SubtitleEditor />)
+    renameFirstSpeaker('Bob')
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Saving failed.')
+  })
+
+  it('shows the server\'s reason when restoring fails and keeps the edits', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    vi.mocked(api.getTranscription).mockRejectedValueOnce(new ApiError(500, 'boom'))
+    render(<SubtitleEditor />)
+    renameFirstSpeaker('Bob')
+    fireEvent.click(screen.getByRole('button', { name: 'Restore original' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('boom')
+    expect(useStore.getState().unsavedEdits).toBe(true)
+    expect(useStore.getState().transcriptionResult!.utterances[0].speaker).toBe('Bob')
+
+    vi.mocked(api.getTranscription).mockResolvedValueOnce(transcript())
+    fireEvent.click(screen.getByRole('button', { name: 'Restore original' }))
+    await waitFor(() => expect(useStore.getState().unsavedEdits).toBe(false))
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(useStore.getState().transcriptionResult!.utterances[0].speaker).toBe('SPEAKER_00')
+  })
+
+  it('shows a general message when restoring fails without a server reason', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    vi.mocked(api.getTranscription).mockRejectedValueOnce(new Error('network'))
+    render(<SubtitleEditor />)
+    renameFirstSpeaker('Bob')
+    fireEvent.click(screen.getByRole('button', { name: 'Restore original' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Restoring failed.')
   })
 })

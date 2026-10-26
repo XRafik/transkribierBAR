@@ -117,6 +117,8 @@
     "saveChanges": "Save changes",
     "restoreOriginal": "Restore original",
     "confirmRestore": "Discard all unsaved changes and restore the original transcription?",
+    "saveFailed": "Saving failed.",
+    "restoreFailed": "Restoring failed.",
     "confirmTimestampCascade": "This change will adjust timestamps on {{count}} adjacent row(s). Continue?",
     "apply": "Apply",
     "generatingSummary": "Generating summary...",

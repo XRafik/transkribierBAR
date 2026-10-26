@@ -51,6 +51,7 @@ export function SubtitleEditor() {
   const activeRef = useRef<HTMLTableRowElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [searchScope, setSearchScope] = useState<SearchScope>('both')
@@ -385,18 +386,20 @@ export function SubtitleEditor() {
 
   const handleRestore = useCallback(async () => {
     if (!transcriptionId || !confirm(t('editor.confirmRestore'))) return
+    setSaveError(null)
     try {
       const original = await api.getTranscription(transcriptionId)
       setResult(original)
       setDirty(false)
     } catch (e) {
-      console.error('Restore failed:', e)
+      setSaveError(e instanceof ApiError && e.message ? e.message : t('editor.restoreFailed'))
     }
   }, [transcriptionId, setResult, setDirty, t])
 
   const handleSave = async () => {
     if (!transcriptionId || !result) return
     setSaving(true)
+    setSaveError(null)
     try {
       await api.saveTranscription(transcriptionId, result.utterances)
       setDirty(false)
@@ -406,7 +409,7 @@ export function SubtitleEditor() {
         api.getRefinement(transcriptionId).then((r) => setRefinementStale(r.stale)).catch(() => {})
       }
     } catch (e) {
-      console.error('Save failed:', e)
+      setSaveError(e instanceof ApiError && e.message ? e.message : t('editor.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -575,6 +578,9 @@ export function SubtitleEditor() {
           </button>
           {dirty && (
             <>
+              {saveError && (
+                <span role="alert" className="text-xs text-red-400">{saveError}</span>
+              )}
               <button
                 onClick={handleRestore}
                 className="px-3 py-1 text-gray-400 text-xs rounded border border-gray-600 hover:text-white hover:border-gray-400"
