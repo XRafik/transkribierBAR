@@ -100,14 +100,15 @@ export function RecordingSources(props: RecordingSourcesProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per camera toggle, not on every device list change
   }, [useCamera, cameraDisabled])
 
-  // Auto-select first available second device when dual-device dropdown appears
+  // Keep the second device a valid candidate: select the first one when unset, stale, or equal to the microphone
   useEffect(() => {
     if (systemAudioSupport !== 'dual-device' || !captureSystemAudio) return
-    if (secondAudioDeviceId) return
+    // Device list not enumerated yet: nothing to validate the choice against.
+    if (audioDevices.length === 0) return
     const available = audioDevices.filter((d) => d.deviceId !== audioDeviceId)
-    if (available.length > 0) {
-      onSecondAudioDeviceChange(available[0].deviceId)
-    }
+    if (available.some((d) => d.deviceId === secondAudioDeviceId)) return
+    const next = available.length > 0 ? available[0].deviceId : ''
+    if (next !== secondAudioDeviceId) onSecondAudioDeviceChange(next)
   }, [captureSystemAudio, audioDevices, audioDeviceId, secondAudioDeviceId, onSecondAudioDeviceChange])
 
   const makeDeniedBanner = (sourceLabel: string, onRetry: () => void) => (
