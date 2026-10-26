@@ -39,10 +39,10 @@
       "title": "API tokens",
       "createButton": "Create token",
       "nameLabel": "Name",
+      "namePlaceholder": "e.g. my-script",
       "expiresLabel": "Expires in",
-      "expiry30": "30 days",
-      "expiry90": "90 days",
-      "expiry365": "365 days",
+      "expiryDays_one": "{{count}} day",
+      "expiryDays_other": "{{count}} days",
       "createCta": "Create",
       "cancel": "Cancel",
       "revoke": "Revoke",
@@ -59,7 +59,15 @@
       "creating": "Creating…",
       "expiresOnTmpl": "expires {{date}}",
       "lastUsedTmpl": "last used {{date}}",
-      "empty": "No API tokens yet. Create one to get started."
+      "empty": "No API tokens yet. Create one to get started.",
+      "errors": {
+        "duplicateName": "An active token with this name already exists.",
+        "limitReached": "The maximum number of active tokens has been reached.",
+        "notFound": "This token no longer exists.",
+        "createFailed": "Creating the token failed.",
+        "revokeFailed": "Revoking the token failed.",
+        "listFailed": "Loading the tokens failed."
+      }
     }
   },
   "transcription": {

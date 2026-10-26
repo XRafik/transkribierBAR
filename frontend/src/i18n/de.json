@@ -39,10 +39,10 @@
       "title": "API-Tokens",
       "createButton": "Token erstellen",
       "nameLabel": "Name",
+      "namePlaceholder": "z. B. mein-skript",
       "expiresLabel": "Läuft ab",
-      "expiry30": "30 Tage",
-      "expiry90": "90 Tage",
-      "expiry365": "365 Tage",
+      "expiryDays_one": "{{count}} Tag",
+      "expiryDays_other": "{{count}} Tage",
       "createCta": "Erstellen",
       "cancel": "Abbrechen",
       "revoke": "Widerrufen",
@@ -59,7 +59,15 @@
       "creating": "Wird erstellt…",
       "expiresOnTmpl": "läuft ab am {{date}}",
       "lastUsedTmpl": "zuletzt verwendet {{date}}",
-      "empty": "Noch keine API-Tokens. Erstellen Sie einen, um zu beginnen."
+      "empty": "Noch keine API-Tokens. Erstellen Sie einen, um zu beginnen.",
+      "errors": {
+        "duplicateName": "Ein aktiver Token mit diesem Namen existiert bereits.",
+        "limitReached": "Die maximale Anzahl aktiver Tokens ist erreicht.",
+        "notFound": "Dieser Token existiert nicht mehr.",
+        "createFailed": "Der Token konnte nicht erstellt werden.",
+        "revokeFailed": "Der Token konnte nicht widerrufen werden.",
+        "listFailed": "Die Tokens konnten nicht geladen werden."
+      }
     }
   },
   "transcription": {

@@ -8,7 +8,7 @@ Ein Token gehört zu Ihrem Konto. Ein Skript, das ihn verwendet, sieht und ände
 
 ## Token erstellen
 
-Klicken Sie in der Kopfzeile auf **Einstellungen**. Klicken Sie im Bereich **API-Tokens** auf **Token erstellen**. Geben Sie einen **Namen** ein, der Ihnen sagt, wo Sie den Token verwenden, zum Beispiel den Namen des Skripts. Wählen Sie unter **Läuft ab** eine der Optionen **30 Tage**, **90 Tage** oder **365 Tage**. Jeder Token läuft ab; die Standard-Gültigkeit beträgt {{api_token_expiry_days}} Tage. Klicken Sie auf **Erstellen**.
+Klicken Sie in der Kopfzeile auf **Einstellungen**. Klicken Sie im Bereich **API-Tokens** auf **Token erstellen**. Geben Sie einen **Namen** ein, der Ihnen sagt, wo Sie den Token verwenden, zum Beispiel den Namen des Skripts. Wählen Sie unter **Läuft ab**, wie lange der Token gültig bleibt. Die Liste bietet **30 Tage**, **90 Tage** und **365 Tage** und immer auch die Standard-Gültigkeit von {{api_token_expiry_days}} Tagen, die vorausgewählt ist. Jeder Token läuft ab. Klicken Sie auf **Erstellen**.
 
 Der Name darf bis zu 64 Zeichen lang sein. Unter Ihren aktiven Tokens darf jeder Name nur einmal vorkommen. Die Zahl der aktiven Tokens pro Person ist begrenzt. Haben Sie sie erreicht, wird ein weiterer Token mit einer Fehlermeldung im Dialog abgelehnt. Widerrufen Sie dann zuerst einen Token, den Sie nicht mehr brauchen.
 

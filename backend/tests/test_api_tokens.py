@@ -252,6 +252,8 @@ async def test_create_token_duplicate_name_returns_409(monkeypatch):
         await c.post("/api/tokens", json={"name": "dup", "expires_in_days": 30})
         r = await c.post("/api/tokens", json={"name": "dup", "expires_in_days": 30})
     assert r.status_code == 409
+    assert r.json()["code"] == "duplicate_token_name"
+    assert "dup" in r.json()["detail"]
 
 
 @pytest.mark.asyncio
@@ -264,6 +266,19 @@ async def test_create_token_over_cap_returns_429(monkeypatch):
         await c.post("/api/tokens", json={"name": "a", "expires_in_days": 30})
         r = await c.post("/api/tokens", json={"name": "b", "expires_in_days": 30})
     assert r.status_code == 429
+    assert r.json()["code"] == "token_limit_reached"
+    assert "maximum of 1" in r.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_revoke_unknown_token_returns_404_with_code(monkeypatch):
+    monkeypatch.setattr(config_module.settings, "ENABLE_API_TOKENS", True)
+    monkeypatch.setattr(config_module.settings, "DEV_MODE", True)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as c:
+        r = await c.delete("/api/tokens/does-not-exist")
+    assert r.status_code == 404
+    assert r.json() == {"detail": "Token not found", "code": "token_not_found"}
 
 
 @pytest.mark.asyncio

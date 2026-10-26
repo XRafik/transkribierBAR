@@ -242,7 +242,8 @@ export const api = {
   revokeApiToken: async (id: string): Promise<void> => {
     const response = await fetch(`${BASE}/api/tokens/${id}`, { method: 'DELETE' })
     if (!response.ok) {
-      throw new Error(response.statusText)
+      const error = await response.json().catch(() => ({ detail: response.statusText }))
+      throw new ApiError(response.status, error.detail || response.statusText, error.code)
     }
   },
 
