@@ -184,3 +184,36 @@ describe('TranscriptionProgressCard generated title', () => {
     expect(api.connectWebSocket).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('TranscriptionProgressCard connection', () => {
+  let sockets: FakeSocket[]
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    useStore.getState().reset()
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] })
+    sockets = []
+    vi.mocked(api.connectWebSocket).mockImplementation(() => {
+      const socket = new FakeSocket()
+      sockets.push(socket)
+      return socket as unknown as WebSocket
+    })
+    useStore.setState({ transcriptionId: 't1', transcriptionStatus: 'pending' })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('keeps a single socket when the status changes from pending to processing', async () => {
+    render(<TranscriptionProgressCard />)
+
+    act(() => sockets[0].receive({ type: 'status', status: 'processing' }))
+    // The browser reports the replaced socket closed only after the next one opened.
+    act(() => sockets[0].onclose?.())
+    await act(() => vi.advanceTimersByTimeAsync(30000))
+
+    expect(api.connectWebSocket).toHaveBeenCalledTimes(2)
+    expect(sockets.filter((s) => s.close.mock.calls.length === 0)).toHaveLength(1)
+  })
+})

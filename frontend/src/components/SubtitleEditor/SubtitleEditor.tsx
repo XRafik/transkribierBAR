@@ -98,6 +98,12 @@ export function SubtitleEditor() {
       setTranslateSource(refinedUtterances ? 'refined' : 'original')
     }
   }, [showTranslateModal, refinedUtterances])
+
+  // Renewing a stored translation starts from its language
+  const openTranslateDialog = () => {
+    if (translationLanguage) setTranslateLanguage(translationLanguage)
+    setShowTranslateModal(true)
+  }
   const [summaryCollapsed, setSummaryCollapsed] = useState(false)
   const [editingCell, setEditingCell] = useState<{ index: number; field: string } | null>(null)
   const setSeekTo = useStore((s) => s.setSeekTo)
@@ -629,7 +635,7 @@ export function SubtitleEditor() {
         {llmAvailable && !translatedUtterances && (
           <button
             data-help="translate-open"
-            onClick={() => setShowTranslateModal(true)}
+            onClick={openTranslateDialog}
             className="flex items-center gap-1.5 px-3 py-1 text-xs bg-indigo-700/40 text-indigo-300 border border-indigo-700/50 rounded hover:bg-indigo-700/60"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -682,7 +688,7 @@ export function SubtitleEditor() {
               )}
               {translatedUtterances && (translationStale || !translationSourceAvailable) && (
                 <button
-                  onClick={() => setShowTranslateModal(true)}
+                  onClick={openTranslateDialog}
                   className="flex items-center gap-1 px-2 py-1 text-xs text-amber-400 border border-amber-700/40 rounded hover:bg-amber-700/10"
                   title={!translationSourceAvailable ? t('editor.sourceMissing') : t('editor.sourceStale')}
                 >

@@ -125,7 +125,14 @@ export function TranscriptionProgressCard({
     connect()
     return () => {
       doneRef.current = true
-      wsRef.current?.close()
+      // The close event comes after the next run has reset doneRef, so the
+      // socket must not reconnect from it.
+      const ws = wsRef.current
+      if (ws) {
+        ws.onclose = null
+        ws.onmessage = null
+        ws.close()
+      }
       if (pollRef.current) {
         clearInterval(pollRef.current)
         pollRef.current = null

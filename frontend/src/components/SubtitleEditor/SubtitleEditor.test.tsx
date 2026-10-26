@@ -301,3 +301,42 @@ describe('SubtitleEditor translating an out-of-date translation again', () => {
     expect(api.translateTranscription).toHaveBeenCalledWith('t1', 'de', undefined, false)
   })
 })
+
+describe('SubtitleEditor translation language', () => {
+  beforeEach(() => {
+    useStore.setState({
+      config: {
+        asr_backend: 'murmurai',
+        whisper_models: [],
+        default_model: 'm',
+        llm_available: true,
+        logout_url: '',
+        popular_languages: [],
+        enabled_languages: [],
+      },
+    })
+  })
+
+  it('preselects the language of the stored translation', () => {
+    useStore.setState({
+      translatedUtterances: [
+        { start: 1500, end: 4000, text: 'Hallo', speaker: 'SPEAKER_00' },
+        { start: 100000, end: 120000, text: 'General Kenobi', speaker: 'SPEAKER_01' },
+      ],
+      translationLanguage: 'de',
+      translationSource: 'original',
+      translationStale: true,
+      translationSourceAvailable: true,
+    })
+    render(<SubtitleEditor />)
+    fireEvent.click(screen.getByRole('button', { name: 'source has newer content' }))
+    expect(screen.getByLabelText('Translation language')).toHaveValue('de')
+    expect(screen.getByText('The out-of-date translation will be replaced.')).toBeInTheDocument()
+  })
+
+  it('keeps English preselected without a stored translation', () => {
+    render(<SubtitleEditor />)
+    fireEvent.click(screen.getByRole('button', { name: 'Translate' }))
+    expect(screen.getByLabelText('Translation language')).toHaveValue('en')
+  })
+})
