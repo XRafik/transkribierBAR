@@ -54,3 +54,61 @@ describe('SubtitleEditor speaker field', () => {
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeInTheDocument()
   })
 })
+
+describe('SubtitleEditor timestamp fields', () => {
+  // The pencil icons of the start (0) and end (1) of the first row
+  function editTime(n: number): HTMLInputElement {
+    fireEvent.click(screen.getAllByTitle('Edit timestamp')[n])
+    return document.querySelector<HTMLInputElement>('input[data-subtitle-input]')!
+  }
+
+  function enter(input: HTMLInputElement, value: string) {
+    fireEvent.change(input, { target: { value } })
+    fireEvent.blur(input)
+  }
+
+  it('opens with milliseconds and leaving it unchanged keeps the time and the transcript clean', () => {
+    const before = useStore.getState().transcriptionResult
+    render(<SubtitleEditor />)
+    const input = editTime(0)
+    expect(input.value).toBe('00:00:01.500')
+    fireEvent.blur(input)
+    expect(useStore.getState().transcriptionResult).toBe(before)
+    expect(useStore.getState().unsavedEdits).toBe(false)
+    expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull()
+    expect(screen.getByText('00:00:01')).toBeInTheDocument()
+  })
+
+  it('tabbing through the rows without typing keeps the transcript clean', () => {
+    const before = useStore.getState().transcriptionResult
+    render(<SubtitleEditor />)
+    fireEvent.keyDown(editTime(0), { key: 'Tab' })
+    const next = document.querySelector<HTMLInputElement>('input[data-subtitle-input]')!
+    expect(next.value).toBe('00:01:40.000')
+    fireEvent.blur(next)
+    expect(useStore.getState().transcriptionResult).toBe(before)
+    expect(useStore.getState().unsavedEdits).toBe(false)
+  })
+
+  it('reads minutes and seconds', () => {
+    render(<SubtitleEditor />)
+    enter(editTime(1), '01:30')
+    expect(useStore.getState().transcriptionResult!.utterances[0].end).toBe(90000)
+    expect(useStore.getState().unsavedEdits).toBe(true)
+  })
+
+  it('reads a comma as the decimal separator', () => {
+    render(<SubtitleEditor />)
+    enter(editTime(1), '12,5')
+    expect(useStore.getState().transcriptionResult!.utterances[0].end).toBe(12500)
+  })
+
+  it('ignores input that is not a time', () => {
+    const before = useStore.getState().transcriptionResult
+    render(<SubtitleEditor />)
+    enter(editTime(1), 'abc')
+    expect(useStore.getState().transcriptionResult).toBe(before)
+    expect(useStore.getState().unsavedEdits).toBe(false)
+    expect(screen.getByText('00:00:04')).toBeInTheDocument()
+  })
+})

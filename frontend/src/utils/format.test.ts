@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatDate, formatDateTime, formatFileSize, parseServerDate } from './format'
+import { formatDate, formatDateTime, formatFileSize, formatTimeMs, parseServerDate, parseTimestamp } from './format'
 
 describe('formatFileSize', () => {
   it('formats bytes below 1 KB', () => {
@@ -60,4 +60,37 @@ describe('formatDate / formatDateTime', () => {
     expect(formatDate('2027-01-22 09:15:03', 'en')).toBe(d.toLocaleDateString('en'))
     expect(formatDate(d, 'en')).toBe(d.toLocaleDateString('en'))
   })
+})
+
+describe('formatTimeMs', () => {
+  it('shows hours, minutes, seconds and milliseconds', () => {
+    expect(formatTimeMs(0)).toBe('00:00:00.000')
+    expect(formatTimeMs(1500)).toBe('00:00:01.500')
+    expect(formatTimeMs(3723004)).toBe('01:02:03.004')
+  })
+})
+
+describe('parseTimestamp', () => {
+  it.each([
+    ['01:02:03', 3723000],
+    ['00:00:01.500', 1500],
+    ['01:02:03,25', 3723250],
+    ['01:30', 90000],
+    ['01:30.5', 90500],
+    ['12', 12000],
+    ['90', 90000],
+    ['12.5', 12500],
+    ['12,5', 12500],
+    ['0.001', 1],
+    ['  01:30  ', 90000],
+  ])('reads %j as %d ms', (input, ms) => {
+    expect(parseTimestamp(input)).toBe(ms)
+  })
+
+  it.each(['', '   ', 'abc', '1:2a', '-5', '-00:01', '1:2:3:4', '01::30', '1.5.5'])(
+    'rejects %j',
+    (input) => {
+      expect(parseTimestamp(input)).toBeNull()
+    },
+  )
 })

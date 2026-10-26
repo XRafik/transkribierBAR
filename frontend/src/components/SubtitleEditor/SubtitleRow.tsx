@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, forwardRef } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../../store'
-import { formatTime } from '../../utils/format'
+import { formatTime, formatTimeMs, parseTimestamp } from '../../utils/format'
 import type { Utterance } from '../../api/types'
 
 function highlightText(text: string, query: string): ReactNode {
@@ -103,8 +103,8 @@ export const SubtitleRow = forwardRef<HTMLTableRowElement, Props>(function Subti
   if (editingField !== prevEditingField) {
     setPrevEditingField(editingField)
     if (editingField && editingField !== 'text') {
-      if (editingField === 'start') setEditValue(formatTime(utterance.start))
-      else if (editingField === 'end') setEditValue(formatTime(utterance.end))
+      if (editingField === 'start') setEditValue(formatTimeMs(utterance.start))
+      else if (editingField === 'end') setEditValue(formatTimeMs(utterance.end))
       else if (editingField === 'speaker') setEditValue(speakerDisplay)
     }
   }
@@ -144,9 +144,9 @@ export const SubtitleRow = forwardRef<HTMLTableRowElement, Props>(function Subti
 
   const commitEdit = (field: keyof Utterance) => {
     if (field === 'start' || field === 'end') {
-      const parts = editValue.split(':').map(Number)
-      const ms = ((parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0)) * 1000
-      onUpdate(index, field, ms)
+      // Input that is not a time, or the same time, leaves the row as it was.
+      const ms = parseTimestamp(editValue)
+      if (ms !== null && ms !== utterance[field]) onUpdate(index, field, ms)
     } else {
       // The field opens with the display name, so leaving it unchanged must not
       // write that name over the speaker ID.
@@ -219,7 +219,7 @@ export const SubtitleRow = forwardRef<HTMLTableRowElement, Props>(function Subti
             {renderCell('start', formatTime(utterance.start))}
             {!readOnly && editingField !== 'start' && (
               <button
-                onClick={(e) => { e.stopPropagation(); cancelSeek(); startEdit('start', formatTime(utterance.start)) }}
+                onClick={(e) => { e.stopPropagation(); cancelSeek(); startEdit('start', formatTimeMs(utterance.start)) }}
                 className="opacity-60 hover:opacity-100 transition-opacity text-gray-500 hover:text-blue-400 shrink-0"
                 title={t('editor.editTimestamp')}
               >
@@ -235,7 +235,7 @@ export const SubtitleRow = forwardRef<HTMLTableRowElement, Props>(function Subti
             {renderCell('end', formatTime(utterance.end))}
             {!readOnly && editingField !== 'end' && (
               <button
-                onClick={(e) => { e.stopPropagation(); cancelSeek(); startEdit('end', formatTime(utterance.end)) }}
+                onClick={(e) => { e.stopPropagation(); cancelSeek(); startEdit('end', formatTimeMs(utterance.end)) }}
                 className="opacity-60 hover:opacity-100 transition-opacity text-gray-500 hover:text-blue-400 shrink-0"
                 title={t('editor.editTimestamp')}
               >
