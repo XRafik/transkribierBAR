@@ -85,7 +85,8 @@
     "summary": {
       "noLanguage": "automatisch",
       "speakersOff": "keine Sprechenden",
-      "speakersOne": "{{count}} Person",
+      "speakers_one": "{{count}} Person",
+      "speakers_other": "{{count}} Personen",
       "speakersRange": "{{min}}–{{max}} Personen",
       "viaBundle": "über Paket \"{{name}}\"",
       "line": "{{size}} · {{model}} · {{language}} · {{speakers}}"

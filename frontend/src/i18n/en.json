@@ -85,7 +85,8 @@
     "summary": {
       "noLanguage": "auto",
       "speakersOff": "no speakers",
-      "speakersOne": "{{count}} speaker",
+      "speakers_one": "{{count}} speaker",
+      "speakers_other": "{{count}} speakers",
       "speakersRange": "{{min}}–{{max}} speakers",
       "viaBundle": "via \"{{name}}\" bundle",
       "line": "{{size}} · {{model}} · {{language}} · {{speakers}}"
