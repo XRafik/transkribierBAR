@@ -22,7 +22,7 @@ Ihre Änderungen gelten zunächst nur in Ihrem Browser, bis Sie sie speichern (s
 
 ## Zeiten bearbeiten
 
-Mit dem Stiftsymbol neben **Start** oder **Ende** ändern Sie die Zeit. Das Feld zeigt sie als `HH:MM:SS`. Geben Sie immer alle drei Teile ein, zum Beispiel `00:01:30`. Mit der Eingabetaste oder einem Klick außerhalb übernehmen Sie die Zeit. Das Feld zeigt ganze Sekunden. Beim Übernehmen fallen die Bruchteile einer Sekunde weg, auch wenn Sie die Zeit nicht geändert haben.
+Mit dem Stiftsymbol neben **Start** oder **Ende** ändern Sie die Zeit. Die Tabelle zeigt ganze Sekunden, das Feld zeigt die Zeit mit Millisekunden, zum Beispiel `00:01:30.500`. Sie können auch nur Minuten und Sekunden (`01:30`) oder nur Sekunden (`90`) eingeben. Bruchteile einer Sekunde stehen nach einem Punkt oder einem Komma, zum Beispiel `12,5`. Mit der Eingabetaste oder einem Klick außerhalb übernehmen Sie die Zeit. Ist die Zeit unverändert oder keine gültige Zeit, bleibt die Zeile, wie sie war.
 
 Überschneidet die neue Zeit benachbarte Zeilen, passt der Editor diese an: Ein neuer Start verkürzt das Ende der vorherigen Zeilen, ein neues Ende verschiebt den Start der folgenden. Vorher nennt eine Rückfrage die Zahl der betroffenen Zeilen. Wenn Sie sie abbrechen, bleibt alles unverändert. Liegt der neue Start nach dem Ende der Zeile, rückt auch das Ende nach. Entsprechend wird auch der Start vorgezogen, wenn das neue Ende davor liegt.
 

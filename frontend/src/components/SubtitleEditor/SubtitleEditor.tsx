@@ -51,6 +51,7 @@ export function SubtitleEditor() {
   const activeRef = useRef<HTMLTableRowElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [searchScope, setSearchScope] = useState<SearchScope>('both')
@@ -59,7 +60,7 @@ export function SubtitleEditor() {
   const [retryingChunks, setRetryingChunks] = useState(false)
   const [retryError, setRetryError] = useState<'stale' | 'generic' | null>(null)
   const [refineError, setRefineError] = useState(false)
-  const [translateError, setTranslateError] = useState(false)
+  const [translateError, setTranslateError] = useState<string | null>(null)
   const [refining, setRefining] = useState(false)
   const [selectedRefinementPresetId, setSelectedRefinementPresetId] = useState<string | null>(null)
   const [speakerPanelOpen, setSpeakerPanelOpen] = useState(false)
@@ -385,18 +386,20 @@ export function SubtitleEditor() {
 
   const handleRestore = useCallback(async () => {
     if (!transcriptionId || !confirm(t('editor.confirmRestore'))) return
+    setSaveError(null)
     try {
       const original = await api.getTranscription(transcriptionId)
       setResult(original)
       setDirty(false)
     } catch (e) {
-      console.error('Restore failed:', e)
+      setSaveError(e instanceof ApiError && e.message ? e.message : t('editor.restoreFailed'))
     }
   }, [transcriptionId, setResult, setDirty, t])
 
   const handleSave = async () => {
     if (!transcriptionId || !result) return
     setSaving(true)
+    setSaveError(null)
     try {
       await api.saveTranscription(transcriptionId, result.utterances)
       setDirty(false)
@@ -406,7 +409,7 @@ export function SubtitleEditor() {
         api.getRefinement(transcriptionId).then((r) => setRefinementStale(r.stale)).catch(() => {})
       }
     } catch (e) {
-      console.error('Save failed:', e)
+      setSaveError(e instanceof ApiError && e.message ? e.message : t('editor.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -460,7 +463,7 @@ export function SubtitleEditor() {
   const handleTranslate = async () => {
     if (!transcriptionId) return
     setTranslating(true)
-    setTranslateError(false)
+    setTranslateError(null)
     try {
       const translationResult = await api.translateTranscription(
         transcriptionId,
@@ -476,8 +479,8 @@ export function SubtitleEditor() {
       })
       setActiveView('translated')
       setShowTranslateModal(false)
-    } catch {
-      setTranslateError(true)
+    } catch (e) {
+      setTranslateError(e instanceof ApiError && e.message ? e.message : t('editor.translationFailed'))
     } finally {
       setTranslating(false)
     }
@@ -575,6 +578,9 @@ export function SubtitleEditor() {
           </button>
           {dirty && (
             <>
+              {saveError && (
+                <span role="alert" className="text-xs text-red-400">{saveError}</span>
+              )}
               <button
                 onClick={handleRestore}
                 className="px-3 py-1 text-gray-400 text-xs rounded border border-gray-600 hover:text-white hover:border-gray-400"
@@ -925,11 +931,11 @@ export function SubtitleEditor() {
               </p>
             )}
             {translateError && (
-              <p role="alert" className="text-xs text-red-400 mt-2">{t('editor.translationFailed')}</p>
+              <p role="alert" className="text-xs text-red-400 mt-2">{translateError}</p>
             )}
             <div className="flex justify-end gap-2 mt-4">
               <button
-                onClick={() => { setShowTranslateModal(false); setTranslateError(false) }}
+                onClick={() => { setShowTranslateModal(false); setTranslateError(null) }}
                 disabled={translating}
                 className="px-3 py-1.5 text-xs text-gray-400 border border-gray-600 rounded hover:border-gray-500 hover:text-gray-200 disabled:opacity-50"
               >

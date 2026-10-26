@@ -6,6 +6,23 @@ export function formatTime(ms: number): string {
   return `${pad(h)}:${pad(m % 60)}:${pad(s % 60)}`
 }
 
+/** `formatTime` with milliseconds, `hh:mm:ss.mmm`, for editing a time precisely. */
+export function formatTimeMs(ms: number): string {
+  return `${formatTime(ms)}.${(Math.floor(ms) % 1000).toString().padStart(3, '0')}`
+}
+
+/**
+ * Reads a time typed into the editor: `hh:mm:ss`, `mm:ss` or plain seconds,
+ * each with an optional fraction after `.` or `,`. Returns milliseconds, or
+ * null when the input is not such a time.
+ */
+export function parseTimestamp(input: string): number | null {
+  const match = /^(\d+(?::\d+){0,2})(?:[.,](\d+))?$/.exec(input.trim())
+  if (!match) return null
+  const seconds = match[1].split(':').reduce((total, part) => total * 60 + Number(part), 0)
+  return Math.round((seconds + Number(`0.${match[2] ?? 0}`)) * 1000)
+}
+
 export function formatSrtTime(ms: number): string {
   const totalSec = Math.floor(ms / 1000)
   const h = Math.floor(totalSec / 3600)
