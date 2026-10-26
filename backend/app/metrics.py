@@ -133,7 +133,7 @@ websocket_connections_active = _gauge("transcription_websocket_connections_activ
 websocket_connections_total = _counter("transcription_websocket_connections_total", "Total WebSocket connections")
 websocket_messages_sent_total = _counter(
     "transcription_websocket_messages_sent_total", "WebSocket messages sent to clients",
-    ["type"],  # type: status | error
+    ["type"],  # type: status | error | title
 )
 websocket_disconnects_total = _counter(
     "transcription_websocket_disconnects_total", "WebSocket disconnects",

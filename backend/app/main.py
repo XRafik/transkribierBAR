@@ -87,7 +87,7 @@ async def fail_interrupted_transcriptions() -> list[str]:
         )
         job_ids = [row["asr_job_id"] for row in await cursor.fetchall()]
         await db.execute(
-            "UPDATE transcriptions SET status = 'failed', error_message = ? "
+            "UPDATE transcriptions SET status = 'failed', error_message = ?, error_code = 'server_restarted' "
             "WHERE status IN ('pending', 'processing')",
             (INTERRUPTED_MESSAGE,),
         )

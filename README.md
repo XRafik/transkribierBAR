@@ -259,7 +259,7 @@ The application includes comprehensive Prometheus metrics for monitoring usage a
 - **WebSocket**:
   - `transcription_websocket_connections_active` — Active WebSocket connections
   - `transcription_websocket_connections_total` — Total WebSocket connections
-  - `transcription_websocket_messages_sent_total` — Messages sent to clients by type (`status`/`error`)
+  - `transcription_websocket_messages_sent_total` — Messages sent to clients by type (`status`/`error`/`title`)
   - `transcription_websocket_disconnects_total` — Disconnects by reason (`client_disconnect`, `auth_missing`, `not_found`, `completed`, `failed`, `not_found_record`, `error`)
 
 - **Storage**:

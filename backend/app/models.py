@@ -39,6 +39,9 @@ class TranscriptionStatus(BaseModel):
     status: str
     progress: float | None = None
     error: str | None = None
+    # Stable reason for a failure, next to the English `error` that API clients may
+    # rely on: server_restarted, timeout, asr_unreachable, asr_failed or unknown.
+    error_code: str | None = None
 
 
 class Utterance(BaseModel):
