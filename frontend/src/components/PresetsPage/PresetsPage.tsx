@@ -123,7 +123,7 @@ function TranscriptionPresetsList() {
           <div className="min-w-0">
             <p className="font-medium text-white truncate">{p.name}</p>
             <p className="text-xs text-gray-400 mt-0.5">
-              {p.model}{p.language ? ` · ${p.language}` : ''}{p.hotwords ? ` · ${p.hotwords}` : ''}
+              {p.model}{p.language ? ` · ${t(`languages.${p.language}`, p.language)}` : ''}{p.hotwords ? ` · ${p.hotwords}` : ''}
             </p>
           </div>
           <div className="flex gap-2 shrink-0">
@@ -334,7 +334,7 @@ function AnalysisPresetsList() {
           <div className="min-w-0">
             <p className="font-medium text-white truncate">{p.name}</p>
             <p className="text-xs text-gray-400 mt-0.5">
-              {templateLabel(p.template)}{p.language ? ` · ${p.language}` : ''}
+              {templateLabel(p.template)}{p.language ? ` · ${t(`languages.${p.language}`, p.language)}` : ''}
             </p>
           </div>
           <div className="flex gap-2 shrink-0">
@@ -633,9 +633,9 @@ function BundlesList() {
 
   const handleToggleDefault = async (b: PresetBundle) => {
     try {
-      if (activeBundleId === b.id) {
+      if (b.is_default) {
         await api.clearDefaultBundle()
-        setActiveBundleId(null)
+        if (activeBundleId === b.id) setActiveBundleId(null)
         setBundles(bundles.map((x) => ({ ...x, is_default: false })))
       } else {
         await api.setDefaultBundle(b.id)
@@ -662,7 +662,7 @@ function BundlesList() {
         const tpName = presetName(transcriptionPresets, b.transcription_preset_id)
         const apName = presetName(analysisPresets, b.analysis_preset_id)
         const rpName = presetName(refinementPresets, b.refinement_preset_id)
-        const isDefault = activeBundleId === b.id
+        const isDefault = b.is_default
 
         return (
           <div key={b.id} className="bg-gray-800 rounded-lg p-4">
@@ -694,7 +694,7 @@ function BundlesList() {
                   )}
                   {b.translate_language && (
                     <span className="text-xs bg-gray-700 text-gray-300 rounded px-2 py-0.5">
-                      {t('editor.translate')}: {b.translate_language}
+                      {t('editor.translate')}: {t(`languages.${b.translate_language}`, b.translate_language)}
                     </span>
                   )}
                 </div>

@@ -77,6 +77,12 @@
     "archived": "Archived",
     "expiresOn": "Expires: {{date}}",
     "confirmDelete": "Are you sure you want to delete this transcription? This cannot be undone.",
+    "status": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "completed": "Completed",
+      "failed": "Failed"
+    },
     "statusPending": "Waiting in queue — please wait...",
     "statusProcessing": "Transcribing audio — please wait, this may take a few minutes.",
     "statusUploading": "Uploading file — please wait...",
@@ -85,7 +91,8 @@
     "summary": {
       "noLanguage": "auto",
       "speakersOff": "no speakers",
-      "speakersOne": "{{count}} speaker",
+      "speakers_one": "{{count}} speaker",
+      "speakers_other": "{{count}} speakers",
       "speakersRange": "{{min}}–{{max}} speakers",
       "viaBundle": "via \"{{name}}\" bundle",
       "line": "{{size}} · {{model}} · {{language}} · {{speakers}}"
@@ -219,6 +226,8 @@
     "analysis": "Analysis"
   },
   "analysis": {
+    "removeChapter": "Remove chapter",
+    "removeItem": "Remove item",
     "selectTemplate": "Select a template",
     "customPrompt": "Custom",
     "templateSummary": "Summary with chapters",

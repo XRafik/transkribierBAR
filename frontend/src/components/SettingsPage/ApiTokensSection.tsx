@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../api/client'
 import type { ApiToken } from '../../api/types'
+import { formatDateTime } from '../../utils/format'
 import { CreateTokenModal } from './CreateTokenModal'
 
 type TokenStatus = 'active' | 'expired' | 'revoked'
@@ -16,7 +17,7 @@ function getTokenStatus(token: ApiToken): TokenStatus {
 }
 
 export function ApiTokensSection() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [tokens, setTokens] = useState<ApiToken[]>([])
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -99,10 +100,10 @@ export function ApiTokensSection() {
                       {t(`settings.apiTokens.${statusKey}`)}
                     </span>
                     {token.expires_at && (
-                      <span>{t('settings.apiTokens.expiresOnTmpl', { date: token.expires_at })}</span>
+                      <span>{t('settings.apiTokens.expiresOnTmpl', { date: formatDateTime(token.expires_at, i18n.language) })}</span>
                     )}
                     {token.last_used_at && (
-                      <span>{t('settings.apiTokens.lastUsedTmpl', { date: token.last_used_at })}</span>
+                      <span>{t('settings.apiTokens.lastUsedTmpl', { date: formatDateTime(token.last_used_at, i18n.language) })}</span>
                     )}
                   </div>
                 </div>

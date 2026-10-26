@@ -26,6 +26,27 @@ export function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+/**
+ * Parse a timestamp from the server. The backend sends `YYYY-MM-DD HH:MM:SS`
+ * in UTC without a designator; such values are read as UTC. Strings that
+ * already carry `Z` or an offset are left alone.
+ */
+export function parseServerDate(value: string): Date {
+  const iso = value.replace(' ', 'T')
+  const hasZone = /T.*(Z|[+-]\d{2}(:?\d{2})?)$/i.test(iso)
+  return new Date(hasZone ? iso : iso + 'Z')
+}
+
+export function formatDate(value: string | Date, locale: string): string {
+  const date = typeof value === 'string' ? parseServerDate(value) : value
+  return date.toLocaleDateString(locale)
+}
+
+export function formatDateTime(value: string | Date, locale: string): string {
+  const date = typeof value === 'string' ? parseServerDate(value) : value
+  return date.toLocaleString(locale)
+}
+
 export function downloadFile(content: string, filename: string, mimeType: string) {
   const blob = new Blob([content], { type: mimeType })
   const url = URL.createObjectURL(blob)

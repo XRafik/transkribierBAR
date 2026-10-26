@@ -77,6 +77,12 @@
     "archived": "Archiviert",
     "expiresOn": "Läuft ab: {{date}}",
     "confirmDelete": "Sind Sie sicher, dass Sie diese Transkription löschen möchten? Dies kann nicht rückgängig gemacht werden.",
+    "status": {
+      "pending": "Wartend",
+      "processing": "In Bearbeitung",
+      "completed": "Abgeschlossen",
+      "failed": "Fehlgeschlagen"
+    },
     "statusPending": "Wartet in der Warteschlange — bitte warten...",
     "statusProcessing": "Audio wird transkribiert — bitte warten, dies kann einige Minuten dauern.",
     "statusUploading": "Datei wird hochgeladen — bitte warten...",
@@ -85,7 +91,8 @@
     "summary": {
       "noLanguage": "automatisch",
       "speakersOff": "keine Sprechenden",
-      "speakersOne": "{{count}} Person",
+      "speakers_one": "{{count}} Person",
+      "speakers_other": "{{count}} Personen",
       "speakersRange": "{{min}}–{{max}} Personen",
       "viaBundle": "über Paket \"{{name}}\"",
       "line": "{{size}} · {{model}} · {{language}} · {{speakers}}"
@@ -219,6 +226,8 @@
     "analysis": "Analyse"
   },
   "analysis": {
+    "removeChapter": "Kapitel entfernen",
+    "removeItem": "Eintrag entfernen",
     "selectTemplate": "Vorlage auswählen",
     "customPrompt": "Eigene Anweisung",
     "templateSummary": "Zusammenfassung mit Kapiteln",
