@@ -8,7 +8,7 @@ A token belongs to your account. A script that uses it sees and changes only you
 
 ## Creating a token
 
-Click **Settings** in the header. In the **API tokens** section, click **Create token**. Enter a **Name** that tells you where you use the token, for example the name of the script. Under **Expires in**, choose **30 days**, **90 days**, or **365 days**. Every token expires; the default validity is {{api_token_expiry_days}} days. Click **Create**.
+Click **Settings** in the header. In the **API tokens** section, click **Create token**. Enter a **Name** that tells you where you use the token, for example the name of the script. Under **Expires in**, choose how long the token stays valid. The list offers **30 days**, **90 days** and **365 days**, and always also the default validity of {{api_token_expiry_days}} days, which is preselected. Every token expires. Click **Create**.
 
 The name can be up to 64 characters long. Among your active tokens each name may only be used once. The number of active tokens per person is limited. If you have reached it, creating another one is refused with an error message in the dialog. Revoke a token you no longer need first.
 

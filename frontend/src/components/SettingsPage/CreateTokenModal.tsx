@@ -25,11 +25,11 @@ export function CreateTokenModal({ onClose, onCreated }: Props) {
     return () => clearTimeout(id)
   }, [copied])
 
-  const expiryOptions = [
-    { label: t('settings.apiTokens.expiry30'), days: 30 },
-    { label: t('settings.apiTokens.expiry90'), days: 90 },
-    { label: t('settings.apiTokens.expiry365'), days: 365 },
-  ]
+  // The configured default is always one of the options, so the select shows
+  // the value the token is created with.
+  const expiryOptions = [...new Set([30, 90, 365, defaultDays])]
+    .sort((a, b) => a - b)
+    .map((days) => ({ label: t('settings.apiTokens.expiryDays', { count: days }), days }))
 
   async function handleCreate() {
     setError(null)
