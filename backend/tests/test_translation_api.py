@@ -199,3 +199,94 @@ async def test_translate_allows_same_language_when_source_language_unknown():
             resp = await client.post(f"/api/translate/{txn_id}", json={"target_language": "de"})
 
     assert resp.status_code == 200
+
+
+async def _translate_then_edit_source(client, txn_id):
+    """Store an English translation, then change the original's text so the
+    stored translation is out of date."""
+    with patch("app.routers.translation.get_llm_provider", return_value=AsyncMock()), \
+         patch("app.routers.translation._call_llm_translation",
+               return_value=_translated(["Hello world", "How are you"])):
+        await client.post(f"/api/translate/{txn_id}", json={"target_language": "en"})
+
+    from app.database import get_db
+    async with get_db() as db:
+        await db.execute(
+            "UPDATE transcriptions SET result_json = ? WHERE id = ?",
+            (json.dumps([
+                {"start": 0, "end": 1000, "text": "Hallo schöne Welt", "speaker": "A"},
+                {"start": 1000, "end": 2000, "text": "Wie geht es dir", "speaker": "B"},
+            ]), txn_id),
+        )
+        await db.commit()
+
+
+@pytest.mark.asyncio
+async def test_translate_without_force_returns_the_stale_cached_translation():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        txn_id, _ = await _setup(client, txn_id="test-translate-stale-cached")
+        await _translate_then_edit_source(client, txn_id)
+
+        llm = AsyncMock(return_value=_translated(["Hello beautiful world", "How are you"]))
+        with patch("app.routers.translation.get_llm_provider", return_value=AsyncMock()), \
+             patch("app.routers.translation._call_llm_translation", llm):
+            resp = await client.post(f"/api/translate/{txn_id}", json={"target_language": "en"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["stale"] is True
+    assert [u["text"] for u in data["utterances"]] == ["Hello world", "How are you"]
+    llm.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_translate_with_force_replaces_the_stale_translation():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        txn_id, _ = await _setup(client, txn_id="test-translate-force")
+        await _translate_then_edit_source(client, txn_id)
+
+        llm = AsyncMock(return_value=_translated(["Hello beautiful world", "How are you"]))
+        with patch("app.routers.translation.get_llm_provider", return_value=AsyncMock()), \
+             patch("app.routers.translation._call_llm_translation", llm):
+            resp = await client.post(
+                f"/api/translate/{txn_id}",
+                json={"target_language": "en", "source": "original", "force": True},
+            )
+        stored = await client.get(f"/api/translate/{txn_id}")
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["stale"] is False
+    assert [u["text"] for u in data["utterances"]] == ["Hello beautiful world", "How are you"]
+    llm.assert_awaited_once()
+    assert [u["text"] for u in llm.await_args.args[1]] == ["Hallo schöne Welt", "Wie geht es dir"]
+    assert stored.json()["stale"] is False
+    assert [u["text"] for u in stored.json()["utterances"]] == ["Hello beautiful world", "How are you"]
+
+
+@pytest.mark.asyncio
+async def test_translate_with_force_while_a_translation_is_in_progress_returns_429():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        txn_id, _ = await _setup(client, txn_id="test-translate-force-busy")
+        from app.database import get_db
+        async with get_db() as db:
+            await db.execute(
+                "UPDATE transcriptions SET translated_utterances_json = '', "
+                "translation_language = 'en' WHERE id = ?",
+                (txn_id,),
+            )
+            await db.commit()
+
+        llm = AsyncMock(return_value=_translated(["Hello world", "How are you"]))
+        with patch("app.routers.translation.get_llm_provider", return_value=AsyncMock()), \
+             patch("app.routers.translation._call_llm_translation", llm):
+            resp = await client.post(
+                f"/api/translate/{txn_id}",
+                json={"target_language": "en", "force": True},
+            )
+
+    assert resp.status_code == 429
+    llm.assert_not_called()

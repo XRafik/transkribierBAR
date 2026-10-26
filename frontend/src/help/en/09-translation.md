@@ -34,7 +34,7 @@ Only one translation exists per transcription. For another language, click **Del
 
 ## When the source changes
 
-If the text of the source has changed since the translation, an amber note appears next to **Delete translation**: **source has newer content**. The note appears once you reopen the transcription. This happens, for example, if the translation was made from the original and you change text in it and save. If the refinement the translation was made from has been deleted, it reads **source no longer available**. Changes to times or names do not count as new content. The translation itself stays unchanged until you renew it. To do so, delete it with **Delete translation** and translate again.
+If the text of the source has changed since the translation, an amber note appears next to **Delete translation**: **source has newer content**. The note appears once you reopen the transcription. This happens, for example, if the translation was made from the original and you change text in it and save. If the refinement the translation was made from has been deleted, it reads **source no longer available**. Changes to times or names do not count as new content. The translation itself stays unchanged until you renew it. To do so, click the note. The **Translate to** dialog opens, and translating again replaces the out-of-date translation. If you choose the same language as before, and the same source where the dialog offers **Source**, the dialog says so: **The out-of-date translation will be replaced.**
 
 ## If the translation fails
 

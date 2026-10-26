@@ -229,6 +229,7 @@
     "fromRefined": "aus Verfeinerung",
     "sourceStale": "Quelle hat neueren Inhalt",
     "sourceMissing": "Quelle nicht mehr verfügbar",
+    "translationReplacesStale": "Die veraltete Übersetzung wird ersetzt.",
     "refreshFromSource": "Mit gleicher Quelle erneut ausführen",
     "hotkeyLegend": "Tastenkürzel",
     "hotkeyTab": "Nächste Untertitel",

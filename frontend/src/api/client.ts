@@ -170,10 +170,14 @@ export const api = {
   deleteAnalysisItem: (transcriptionId: string, analysisId: string, field: string, index: number) =>
     request<unknown>(`/api/analysis/${transcriptionId}/${analysisId}/items/${field}/${index}`, { method: 'DELETE' }),
 
-  translateTranscription: (id: string, targetLanguage: string, source?: UtteranceSource) =>
+  translateTranscription: (id: string, targetLanguage: string, source?: UtteranceSource, force?: boolean) =>
     request<TranslationResult>(`/api/translate/${id}`, {
       method: 'POST',
-      body: JSON.stringify({ target_language: targetLanguage, ...(source ? { source } : {}) }),
+      body: JSON.stringify({
+        target_language: targetLanguage,
+        ...(source ? { source } : {}),
+        ...(force ? { force } : {}),
+      }),
     }),
 
   getTranslation: (id: string) =>

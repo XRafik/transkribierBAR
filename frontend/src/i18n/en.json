@@ -229,6 +229,7 @@
     "fromRefined": "from refined",
     "sourceStale": "source has newer content",
     "sourceMissing": "source no longer available",
+    "translationReplacesStale": "The out-of-date translation will be replaced.",
     "refreshFromSource": "Re-run with same source",
     "hotkeyLegend": "Keyboard shortcuts",
     "hotkeyTab": "Next caption",

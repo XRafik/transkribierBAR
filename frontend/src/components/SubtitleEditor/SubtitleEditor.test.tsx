@@ -228,3 +228,76 @@ describe('SubtitleEditor translation errors', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Translation failed. Please try again.')
   })
 })
+
+describe('SubtitleEditor translating an out-of-date translation again', () => {
+  function storeTranslation(stale: boolean) {
+    useStore.setState({
+      config: {
+        asr_backend: 'murmurai',
+        whisper_models: [],
+        default_model: 'm',
+        llm_available: true,
+        logout_url: '',
+        popular_languages: [],
+        enabled_languages: [],
+      },
+      translatedUtterances: [
+        { start: 1500, end: 4000, text: 'Hallo', speaker: 'SPEAKER_00' },
+        { start: 100000, end: 120000, text: 'General Kenobi', speaker: 'SPEAKER_01' },
+      ],
+      translationLanguage: 'de',
+      translationSource: 'original',
+      translationStale: stale,
+      translationSourceAvailable: true,
+    })
+  }
+
+  function openDialogFromStaleBadge(language: string) {
+    render(<SubtitleEditor />)
+    fireEvent.click(screen.getByRole('button', { name: 'source has newer content' }))
+    fireEvent.change(screen.getByLabelText('Translation language'), { target: { value: language } })
+  }
+
+  it('asks for a new translation and clears the badge', async () => {
+    storeTranslation(true)
+    vi.mocked(api.translateTranscription).mockResolvedValueOnce({
+      utterances: [
+        { start: 1500, end: 4000, text: 'Hallo du', speaker: 'SPEAKER_00' },
+        { start: 100000, end: 120000, text: 'General Kenobi', speaker: 'SPEAKER_01' },
+      ],
+      language: 'de',
+      source: 'original',
+      source_hash: 'h2',
+      stale: false,
+      source_available: true,
+    })
+    openDialogFromStaleBadge('de')
+    expect(screen.getByText('The out-of-date translation will be replaced.')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Translate' }))
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Translate' })).toBeNull())
+    expect(api.translateTranscription).toHaveBeenCalledWith('t1', 'de', undefined, true)
+    expect(screen.queryByRole('button', { name: 'source has newer content' })).toBeNull()
+  })
+
+  it('does not ask for a new translation into another language', async () => {
+    storeTranslation(true)
+    vi.mocked(api.translateTranscription).mockRejectedValueOnce(new Error('network'))
+    openDialogFromStaleBadge('fr')
+    expect(screen.queryByText('The out-of-date translation will be replaced.')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Translate' }))
+    await screen.findByRole('alert')
+    expect(api.translateTranscription).toHaveBeenCalledWith('t1', 'fr', undefined, false)
+  })
+
+  it('does not ask for a new translation once the stored one is current', async () => {
+    storeTranslation(true)
+    vi.mocked(api.translateTranscription).mockRejectedValueOnce(new Error('network'))
+    openDialogFromStaleBadge('de')
+    // A bundle run can store a current translation while the dialog is open
+    act(() => useStore.getState().setTranslationMetadata({ source: 'original', stale: false, sourceAvailable: true }))
+    expect(screen.queryByText('The out-of-date translation will be replaced.')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Translate' }))
+    await screen.findByRole('alert')
+    expect(api.translateTranscription).toHaveBeenCalledWith('t1', 'de', undefined, false)
+  })
+})
