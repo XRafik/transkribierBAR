@@ -39,6 +39,7 @@
       "title": "API-Tokens",
       "createButton": "Token erstellen",
       "nameLabel": "Name",
+      "namePlaceholder": "z. B. mein-skript",
       "expiresLabel": "Läuft ab",
       "expiryDays_one": "{{count}} Tag",
       "expiryDays_other": "{{count}} Tage",

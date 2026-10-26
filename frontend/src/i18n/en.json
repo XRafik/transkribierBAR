@@ -39,6 +39,7 @@
       "title": "API tokens",
       "createButton": "Create token",
       "nameLabel": "Name",
+      "namePlaceholder": "e.g. my-script",
       "expiresLabel": "Expires in",
       "expiryDays_one": "{{count}} day",
       "expiryDays_other": "{{count}} days",

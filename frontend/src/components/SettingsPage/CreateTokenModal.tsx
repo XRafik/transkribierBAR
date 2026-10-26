@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../api/client'
 import type { ApiTokenCreated } from '../../api/types'
 import { useStore } from '../../store'
+import { useModalDialog } from '../../hooks/useModalDialog'
 
 interface Props {
   onClose: () => void
@@ -18,6 +19,12 @@ export function CreateTokenModal({ onClose, onCreated }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [copied, setCopied] = useState(false)
+  const titleId = useId()
+  const nameId = useId()
+  const nameRef = useRef<HTMLInputElement>(null)
+  // Escape must not dismiss the dialog while the request runs or the secret,
+  // which is shown only once, is on screen.
+  useModalDialog(created || submitting ? undefined : onClose, nameRef)
 
   useEffect(() => {
     if (!copied) return
@@ -57,10 +64,15 @@ export function CreateTokenModal({ onClose, onCreated }: Props) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 max-w-md w-full space-y-4 mx-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="bg-gray-900 border border-gray-700 rounded-lg p-6 max-w-md w-full space-y-4 mx-4"
+      >
         {created ? (
           <>
-            <h2 className="text-lg font-semibold text-white">{t('settings.apiTokens.createdHeader')}</h2>
+            <h2 id={titleId} className="text-lg font-semibold text-white">{t('settings.apiTokens.createdHeader')}</h2>
             <p className="text-sm text-yellow-400">
               {t('settings.apiTokens.saveNowWarning')}
             </p>
@@ -89,20 +101,22 @@ export function CreateTokenModal({ onClose, onCreated }: Props) {
           </>
         ) : (
           <>
-            <h2 className="text-lg font-semibold text-white">{t('settings.apiTokens.createButton')}</h2>
+            <h2 id={titleId} className="text-lg font-semibold text-white">{t('settings.apiTokens.createButton')}</h2>
 
             {error && (
               <p className="text-sm text-red-400">{error}</p>
             )}
 
             <div>
-              <label className="block text-xs text-gray-400 mb-1">{t('settings.apiTokens.nameLabel')}</label>
+              <label htmlFor={nameId} className="block text-xs text-gray-400 mb-1">{t('settings.apiTokens.nameLabel')}</label>
               <input
+                id={nameId}
+                ref={nameRef}
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 maxLength={64}
-                placeholder="e.g. my-script"
+                placeholder={t('settings.apiTokens.namePlaceholder')}
                 className="w-full bg-gray-800 text-white text-sm rounded px-3 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 border border-gray-700"
               />
             </div>
