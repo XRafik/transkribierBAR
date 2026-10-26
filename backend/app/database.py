@@ -199,7 +199,9 @@ async def init_db(db_path: str) -> None:
                     language TEXT,
                     llm_provider TEXT,
                     llm_model TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    source TEXT,
+                    source_hash TEXT
                 )
             """)
             # Clean up orphaned in-progress placeholders
