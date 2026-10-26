@@ -2,6 +2,7 @@ import os
 os.environ.setdefault("ENABLE_API_TOKENS", "true")
 os.environ.setdefault("DEV_MODE", "true")
 os.environ.setdefault("ENABLE_METRICS", "true")
+os.environ.setdefault("LLM_API_KEY", "test-key")
 
 import asyncio
 import tempfile
