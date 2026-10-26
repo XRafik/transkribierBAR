@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import i18n from '../../i18n'
 import { useStore } from '../../store'
 import type { ConfigResponse } from '../../api/types'
+import { ApiError } from '../../api/client'
 import { CreateTokenModal } from './CreateTokenModal'
 
 const createApiToken = vi.hoisted(() => vi.fn())
@@ -110,5 +111,21 @@ describe('CreateTokenModal dialog semantics', () => {
     await screen.findByText('tw_secret')
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
     expect(onClose).not.toHaveBeenCalled()
+  })
+})
+
+describe('CreateTokenModal errors', () => {
+  it('shows a duplicate-name error in German', async () => {
+    await i18n.changeLanguage('de')
+    createApiToken.mockRejectedValue(
+      new ApiError(409, "An active token named 'a' already exists for this user", 'duplicate_token_name'),
+    )
+    render(<CreateTokenModal onClose={vi.fn()} onCreated={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'a' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Erstellen' }))
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Ein aktiver Token mit diesem Namen existiert bereits.')
+    await act(() => i18n.changeLanguage('en'))
+    expect(screen.getByRole('alert')).toHaveTextContent('An active token with this name already exists.')
   })
 })

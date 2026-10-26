@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { api } from '../../api/client'
 import type { ApiTokenCreated } from '../../api/types'
 import { useStore } from '../../store'
+import { tokenErrorMessage } from '../../utils/tokenError'
 import { useModalDialog } from '../../hooks/useModalDialog'
 
 interface Props {
@@ -16,7 +17,8 @@ export function CreateTokenModal({ onClose, onCreated }: Props) {
   const [name, setName] = useState('')
   const [expiryDays, setExpiryDays] = useState<number>(defaultDays)
   const [created, setCreated] = useState<ApiTokenCreated | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  // The raw error, translated at render time so it follows a language switch.
+  const [error, setError] = useState<{ e: unknown } | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [copied, setCopied] = useState(false)
   const titleId = useId()
@@ -45,7 +47,7 @@ export function CreateTokenModal({ onClose, onCreated }: Props) {
       const result = await api.createApiToken(name.trim(), expiryDays)
       setCreated(result)
     } catch (e) {
-      setError((e as Error).message)
+      setError({ e })
     } finally {
       setSubmitting(false)
     }
@@ -104,7 +106,7 @@ export function CreateTokenModal({ onClose, onCreated }: Props) {
             <h2 id={titleId} className="text-lg font-semibold text-white">{t('settings.apiTokens.createButton')}</h2>
 
             {error && (
-              <p className="text-sm text-red-400">{error}</p>
+              <p role="alert" className="text-sm text-red-400">{tokenErrorMessage(error.e, t, 'create')}</p>
             )}
 
             <div>
