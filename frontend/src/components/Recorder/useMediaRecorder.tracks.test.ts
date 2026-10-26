@@ -76,3 +76,55 @@ describe('useMediaRecorder camera track', () => {
     expect(cameraTrack.stop).toHaveBeenCalled()
   })
 })
+
+describe('useMediaRecorder when the recorder cannot be created', () => {
+  class ThrowingMediaRecorder {
+    static isTypeSupported() { return true }
+    constructor() { throw new Error('unsupported mime type') }
+  }
+
+  it('stops the microphone and camera and clears the stream', async () => {
+    vi.stubGlobal('MediaRecorder', ThrowingMediaRecorder)
+    const { result, unmount } = renderHook(() => useMediaRecorder({ useMicrophone: true, useCamera: true }))
+    await act(() => result.current.start())
+    expect(result.current.error).toBe('micRequired')
+    expect(result.current.state).toBe('idle')
+    expect(micTrack.stop).toHaveBeenCalledTimes(1)
+    expect(cameraTrack.stop).toHaveBeenCalledTimes(1)
+    expect(result.current.stream).toBeNull()
+    // Refs are clear: neither discard nor unmount stops the tracks again.
+    act(() => result.current.discard())
+    unmount()
+    expect(micTrack.stop).toHaveBeenCalledTimes(1)
+    expect(cameraTrack.stop).toHaveBeenCalledTimes(1)
+  })
+
+  it('stops the failed attempt once and records with the retry tracks', async () => {
+    let attempts = 0
+    class FlakyMediaRecorder extends FakeMediaRecorder {
+      constructor() {
+        super()
+        if (attempts++ === 0) throw new Error('unsupported mime type')
+      }
+    }
+    vi.stubGlobal('MediaRecorder', FlakyMediaRecorder)
+    const opened: FakeTrack[][] = []
+    ;(navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockImplementation(
+      async (c: MediaStreamConstraints) => {
+        const track: FakeTrack = { kind: c.video ? 'video' : 'audio', stop: vi.fn() }
+        const attempt = Math.floor(opened.flat().length / 2)
+        ;(opened[attempt] ??= []).push(track)
+        return new FakeMediaStream([track])
+      })
+    const { result } = renderHook(() => useMediaRecorder({ useMicrophone: true, useCamera: true }))
+    await act(() => result.current.start())
+    expect(result.current.state).toBe('idle')
+    await act(() => result.current.start())
+    expect(result.current.state).toBe('recording')
+    expect(result.current.error).toBeNull()
+    const [first, second] = opened
+    first.forEach((t) => expect(t.stop).toHaveBeenCalledTimes(1))
+    second.forEach((t) => expect(t.stop).not.toHaveBeenCalled())
+    expect(result.current.stream?.getTracks()).toEqual(second)
+  })
+})
