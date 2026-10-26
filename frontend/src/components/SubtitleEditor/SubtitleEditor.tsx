@@ -60,7 +60,7 @@ export function SubtitleEditor() {
   const [retryingChunks, setRetryingChunks] = useState(false)
   const [retryError, setRetryError] = useState<'stale' | 'generic' | null>(null)
   const [refineError, setRefineError] = useState(false)
-  const [translateError, setTranslateError] = useState(false)
+  const [translateError, setTranslateError] = useState<string | null>(null)
   const [refining, setRefining] = useState(false)
   const [selectedRefinementPresetId, setSelectedRefinementPresetId] = useState<string | null>(null)
   const [speakerPanelOpen, setSpeakerPanelOpen] = useState(false)
@@ -463,7 +463,7 @@ export function SubtitleEditor() {
   const handleTranslate = async () => {
     if (!transcriptionId) return
     setTranslating(true)
-    setTranslateError(false)
+    setTranslateError(null)
     try {
       const translationResult = await api.translateTranscription(
         transcriptionId,
@@ -479,8 +479,8 @@ export function SubtitleEditor() {
       })
       setActiveView('translated')
       setShowTranslateModal(false)
-    } catch {
-      setTranslateError(true)
+    } catch (e) {
+      setTranslateError(e instanceof ApiError && e.message ? e.message : t('editor.translationFailed'))
     } finally {
       setTranslating(false)
     }
@@ -931,11 +931,11 @@ export function SubtitleEditor() {
               </p>
             )}
             {translateError && (
-              <p role="alert" className="text-xs text-red-400 mt-2">{t('editor.translationFailed')}</p>
+              <p role="alert" className="text-xs text-red-400 mt-2">{translateError}</p>
             )}
             <div className="flex justify-end gap-2 mt-4">
               <button
-                onClick={() => { setShowTranslateModal(false); setTranslateError(false) }}
+                onClick={() => { setShowTranslateModal(false); setTranslateError(null) }}
                 disabled={translating}
                 className="px-3 py-1.5 text-xs text-gray-400 border border-gray-600 rounded hover:border-gray-500 hover:text-gray-200 disabled:opacity-50"
               >

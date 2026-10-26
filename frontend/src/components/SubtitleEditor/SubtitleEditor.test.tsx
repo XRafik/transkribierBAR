@@ -13,6 +13,7 @@ vi.mock('../../api/client', async (importOriginal) => {
     api: {
       saveTranscription: vi.fn(),
       getTranscription: vi.fn(),
+      translateTranscription: vi.fn(),
     },
   }
 })
@@ -41,6 +42,7 @@ beforeEach(async () => {
     transcriptionId: 't1',
     transcriptionResult: transcript(),
     speakerMappings: { SPEAKER_00: 'Alice' },
+    config: null,
   })
 })
 
@@ -189,5 +191,40 @@ describe('SubtitleEditor saving and restoring', () => {
     renameFirstSpeaker('Bob')
     fireEvent.click(screen.getByRole('button', { name: 'Restore original' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Restoring failed.')
+  })
+})
+
+describe('SubtitleEditor translation errors', () => {
+  function translate() {
+    useStore.setState({
+      config: {
+        asr_backend: 'murmurai',
+        whisper_models: [],
+        default_model: 'm',
+        llm_available: true,
+        logout_url: '',
+        popular_languages: [],
+        enabled_languages: [],
+      },
+    })
+    render(<SubtitleEditor />)
+    fireEvent.click(screen.getByRole('button', { name: 'Translate' }))
+    // The dialog's own Translate button comes after the one that opened it
+    const buttons = screen.getAllByRole('button', { name: 'Translate' })
+    fireEvent.click(buttons[buttons.length - 1])
+  }
+
+  it('shows the server\'s reason when a translation is refused', async () => {
+    vi.mocked(api.translateTranscription).mockRejectedValueOnce(
+      new ApiError(400, 'The transcript is already in German.'),
+    )
+    translate()
+    expect(await screen.findByRole('alert')).toHaveTextContent('The transcript is already in German.')
+  })
+
+  it('shows the general message when the translation fails without a reason', async () => {
+    vi.mocked(api.translateTranscription).mockRejectedValueOnce(new Error('network'))
+    translate()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Translation failed. Please try again.')
   })
 })

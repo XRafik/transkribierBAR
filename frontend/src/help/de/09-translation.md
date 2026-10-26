@@ -20,7 +20,7 @@ Klicken Sie im Reiter **Untertitel** über der Tabelle auf **Übersetzen**. Die 
 
 Während der Übersetzung steht auf der Schaltfläche **Übersetze...**, und die Auswahlfelder und Schaltflächen sind gesperrt. Bei mehr als 50 Äußerungen weist ein Hinweis darauf hin, dass die Übersetzung mehrere Minuten dauern kann. Die Seite wartet auf das Sprachmodell. Bleiben Sie darauf, bis der Dialog sich schließt. Verlassen Sie die Seite trotzdem, läuft die Übersetzung auf dem Server weiter. Sie sehen sie, wenn Sie die Transkription später erneut öffnen. Ein neuer Versuch, bevor sie fertig ist, schlägt fehl. Danach zeigt der Editor die Ansicht **Übersetzt**.
 
-Die Sprache der Aufnahme taugt nicht als Zielsprache. Ist sie bekannt und wählen Sie sie, schlägt die Übersetzung fehl, und der Dialog zeigt nur die allgemeine Fehlermeldung.
+Die Sprache der Aufnahme taugt nicht als Zielsprache. Ist sie bekannt und wählen Sie sie, schlägt die Übersetzung fehl, und der Dialog nennt den Grund auf Englisch, zum Beispiel **The transcript is already in German.**
 
 ## Quelle: Original oder Verfeinert
 
@@ -38,7 +38,7 @@ Hat sich der Text der Quelle nach der Übersetzung geändert, erscheint neben **
 
 ## Wenn die Übersetzung nicht klappt
 
-Der Dialog zeigt dann **Übersetzung fehlgeschlagen. Bitte versuchen Sie es erneut.** transkribierBAR wiederholt einzelne Abschnitte vorher selbst. Gelingt auch das nicht für einen Abschnitt, entsteht keine Übersetzung. Teilweise übersetzte Fassungen gibt es nicht. Ein neuer Versuch kann gelingen.
+Der Dialog zeigt dann den Grund, den der Server auf Englisch nennt, zum Beispiel **Translation failed**. Ohne Grund zeigt er **Übersetzung fehlgeschlagen. Bitte versuchen Sie es erneut.** transkribierBAR wiederholt einzelne Abschnitte vorher selbst. Gelingt auch das nicht für einen Abschnitt, entsteht keine Übersetzung. Teilweise übersetzte Fassungen gibt es nicht. Ein neuer Versuch kann gelingen.
 
 ## In einem Paket
 
