@@ -633,9 +633,9 @@ function BundlesList() {
 
   const handleToggleDefault = async (b: PresetBundle) => {
     try {
-      if (activeBundleId === b.id) {
+      if (b.is_default) {
         await api.clearDefaultBundle()
-        setActiveBundleId(null)
+        if (activeBundleId === b.id) setActiveBundleId(null)
         setBundles(bundles.map((x) => ({ ...x, is_default: false })))
       } else {
         await api.setDefaultBundle(b.id)
@@ -662,7 +662,7 @@ function BundlesList() {
         const tpName = presetName(transcriptionPresets, b.transcription_preset_id)
         const apName = presetName(analysisPresets, b.analysis_preset_id)
         const rpName = presetName(refinementPresets, b.refinement_preset_id)
-        const isDefault = activeBundleId === b.id
+        const isDefault = b.is_default
 
         return (
           <div key={b.id} className="bg-gray-800 rounded-lg p-4">

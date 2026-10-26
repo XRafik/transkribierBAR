@@ -11,6 +11,8 @@ vi.mock('../../api/client', () => ({
     createTranscriptionPreset: vi.fn(),
     updateTranscriptionPreset: vi.fn(),
     updateAnalysisPreset: vi.fn(),
+    clearDefaultBundle: vi.fn(),
+    setDefaultBundle: vi.fn(),
   },
 }))
 
@@ -174,5 +176,34 @@ describe('PresetsPage — language names on cards', () => {
     await i18n.changeLanguage('de')
     renderPage([buildPreset({ language: 'de' })])
     expect(screen.getByText(/large-v3-turbo · Deutsch/)).toBeInTheDocument()
+  })
+})
+
+describe('PresetsPage — default bundle', () => {
+  const stars = () => Array.from(document.querySelectorAll<HTMLElement>('[data-help="bundle-default"]'))
+
+  it('marks the saved default, not the bundle selected for upload', () => {
+    useStore.setState({ activeBundleId: 'b2' })
+    renderBundles([
+      buildBundle({ id: 'b1', name: 'Bundle A', is_default: true }),
+      buildBundle({ id: 'b2', name: 'Bundle B' }),
+    ])
+    expect(screen.getAllByText(i18n.t('presets.bundle.isDefault'))).toHaveLength(1)
+    const [starA, starB] = stars()
+    expect(starA).toHaveAttribute('title', i18n.t('presets.bundle.clearDefault'))
+    expect(starB).toHaveAttribute('title', i18n.t('presets.bundle.setDefault'))
+  })
+
+  it('clearing the default leaves the upload selection alone', async () => {
+    vi.mocked(api.clearDefaultBundle).mockResolvedValue(undefined as never)
+    useStore.setState({ activeBundleId: 'b2' })
+    renderBundles([
+      buildBundle({ id: 'b1', name: 'Bundle A', is_default: true }),
+      buildBundle({ id: 'b2', name: 'Bundle B' }),
+    ])
+    fireEvent.click(stars()[0])
+    await waitFor(() => expect(api.clearDefaultBundle).toHaveBeenCalled())
+    await waitFor(() => expect(useStore.getState().bundles.every((b) => !b.is_default)).toBe(true))
+    expect(useStore.getState().activeBundleId).toBe('b2')
   })
 })
