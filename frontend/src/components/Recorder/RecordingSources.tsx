@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getSystemAudioSupport } from '../../utils/platformDetect'
 import { useDevicePermission } from '../../utils/devicePermissions'
+import { getSecondDeviceCandidates } from '../../utils/secondDeviceCandidates'
 import { SourceCard } from './SourceCard'
 
 const systemAudioSupport = getSystemAudioSupport()
@@ -108,7 +109,7 @@ export function RecordingSources(props: RecordingSourcesProps) {
     if (systemAudioSupport !== 'dual-device' || !captureSystemAudio) return
     // Device list not enumerated yet: nothing to validate the choice against.
     if (audioDevices.length === 0) return
-    const available = audioDevices.filter((d) => d.deviceId !== audioDeviceId)
+    const available = getSecondDeviceCandidates(audioDevices, audioDeviceId)
     if (available.some((d) => d.deviceId === secondAudioDeviceId)) return
     const next = available.length > 0 ? available[0].deviceId : ''
     if (next !== secondAudioDeviceId) onSecondAudioDeviceChange(next)
@@ -183,7 +184,7 @@ export function RecordingSources(props: RecordingSourcesProps) {
               </div>
             )}
             {systemAudioSupport === 'dual-device' && (() => {
-              const secondDeviceCandidates = audioDevices.filter((d) => d.deviceId !== audioDeviceId)
+              const secondDeviceCandidates = getSecondDeviceCandidates(audioDevices, audioDeviceId)
               return (
                 <div className="flex flex-col gap-1 min-w-0 sm:flex-row sm:items-center sm:gap-3">
                   <label htmlFor={secondDeviceId} className="text-xs text-gray-400 sm:min-w-24 sm:shrink-0">{t('recorder.selectSecondDevice')}</label>
