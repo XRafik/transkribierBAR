@@ -235,7 +235,7 @@ async def _run_transcription(transcription_id: str, file_path: str, req: Transcr
                 async with get_db() as db:
                     if title and title.strip():
                         await db.execute(
-                            "UPDATE transcriptions SET title = ? WHERE id = ?",
+                            "UPDATE transcriptions SET title = ? WHERE id = ? AND title IS NULL",
                             (title, transcription_id),
                         )
                     else:

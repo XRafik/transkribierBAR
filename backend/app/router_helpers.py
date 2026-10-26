@@ -43,6 +43,21 @@ async def reset_translation_state(transcription_id: str, user_id: str) -> None:
         await db.commit()
 
 
+async def restore_translation_state(
+    transcription_id: str, user_id: str, previous: tuple[str, str | None, str | None, str | None]
+) -> None:
+    """Put back the (json, language, source, source_hash) stored before a failed attempt."""
+    async with get_db() as db:
+        await db.execute(
+            "UPDATE transcriptions SET translated_utterances_json = ?, "
+            "translation_language = ?, translation_source = ?, "
+            "translation_source_hash = ? "
+            "WHERE id = ? AND user_id = ?",
+            (*previous, transcription_id, user_id),
+        )
+        await db.commit()
+
+
 async def reset_refinement_state(transcription_id: str, user_id: str) -> None:
     async with get_db() as db:
         await db.execute(
