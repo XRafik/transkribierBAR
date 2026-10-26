@@ -63,6 +63,38 @@ describe('TranscriptionList opening a transcription', () => {
     await openItem('p2.mp3', [item('p2', 'processing')])
     expect(useStore.getState().leaveReason()).toBeNull()
   })
+
+  it('ignores a transcription that finishes loading after another one was opened', async () => {
+    const resultFor = (id: string) => ({
+      id, status: 'completed', utterances: [], text: id, language: 'en',
+      speaker_mappings: { [id]: id }, summary: null, protocol: null,
+    })
+    let resolveA!: (r: ReturnType<typeof resultFor>) => void
+    vi.mocked(api.getTranscription).mockImplementation((id: string) =>
+      id === 'a'
+        ? new Promise((resolve) => { resolveA = resolve as typeof resolveA })
+        : Promise.resolve(resultFor(id) as never),
+    )
+    vi.mocked(api.getRefinement).mockRejectedValue(new Error('none'))
+    vi.mocked(api.getTranslation).mockRejectedValue(new Error('none'))
+    vi.mocked(api.listTranscriptions).mockResolvedValue([item('a', 'completed'), item('b', 'completed')])
+    render(<TranscriptionList />)
+
+    fireEvent.click(await screen.findByText('a.mp3'))
+    await waitFor(() => expect(api.getTranscription).toHaveBeenCalledWith('a'))
+    fireEvent.click(await screen.findByText('b.mp3'))
+    await waitFor(() => expect(useStore.getState().transcriptionResult?.id).toBe('b'))
+
+    resolveA(resultFor('a'))
+    await new Promise((r) => setTimeout(r, 20))
+
+    const s = useStore.getState()
+    expect(s.transcriptionId).toBe('b')
+    expect(s.transcriptionResult?.id).toBe('b')
+    expect(s.speakerMappings).toEqual({ b: 'b' })
+    expect(api.getRefinement).not.toHaveBeenCalledWith('a')
+    expect(api.getTranslation).not.toHaveBeenCalledWith('a')
+  })
 })
 
 describe('TranscriptionList status badge', () => {

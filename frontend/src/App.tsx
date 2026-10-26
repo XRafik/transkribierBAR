@@ -16,7 +16,7 @@ import { InviteLanding } from './components/InviteLanding'
 import { resolveModel } from './utils/models'
 import { leaveMessages } from './utils/leaveMessages'
 import { formatDate, parseServerDate } from './utils/format'
-import { pipelineTargetToRun } from './utils/pipelineTarget'
+import { pipelineTargetToRun, releaseStatus, whileTranscriptionOpen } from './utils/pipelineTarget'
 
 const RecorderPanel = lazy(() =>
   import('./components/Recorder').then((m) => ({ default: m.RecorderPanel }))
@@ -152,6 +152,8 @@ export function DetailActions() {
   )
 }
 
+type PipelineStatus = { key: string; step: 'refine' | 'analyze' | 'translate'; params?: Record<string, string> }
+
 function App() {
   const pathMatch = window.location.pathname.match(/\/invite\/([^/]+)$/)
   if (pathMatch) {
@@ -283,7 +285,7 @@ function MainApp() {
   const setTranslationLanguage = useStore((s) => s.setTranslationLanguage)
   const setTranslationMetadata = useStore((s) => s.setTranslationMetadata)
   const pipelineTargetRef = useRef(new Map<string, string>())
-  const [pipelineStatus, setPipelineStatus] = useState<{ key: string; step: 'refine' | 'analyze' | 'translate'; params?: Record<string, string> } | null>(null)
+  const [pipelineStatus, setPipelineStatus] = useState<PipelineStatus | null>(null)
   const [pipelineErrors, setPipelineErrors] = useState<string[]>([])
 
   // Clear pipeline progress when a new transcription starts
@@ -326,22 +328,36 @@ function MainApp() {
 
     const run = async () => {
       const errors: string[] = []
+      // The user may open another transcription while the server-side steps run.
+      const whenOpen = whileTranscriptionOpen(transcriptionId, () => useStore.getState().transcriptionId)
+      // The status line is shared by overlapping runs, so a run clears only the status it set.
+      let mine: PipelineStatus | null = null
+      const releaseMine = () => setPipelineStatus((s) => releaseStatus(s, mine))
+      const ifOpen = (write: () => void) => {
+        if (!whenOpen(write)) releaseMine()
+      }
+      const showStatus = (status: PipelineStatus) => ifOpen(() => {
+        mine = status
+        setPipelineStatus(status)
+      })
 
       if (hasRefinement) {
-        setPipelineStatus({ key: 'editor.refining', step: 'refine' })
+        showStatus({ key: 'editor.refining', step: 'refine' })
         try {
           const result = await api.generateRefinement(transcriptionId, hasRefinement.context || undefined)
-          setRefinedUtterances(result.utterances)
-          setRefinementMetadata(result.metadata)
-          setRefinementStale(result.stale)
-          setActiveView('refined')
+          ifOpen(() => {
+            setRefinedUtterances(result.utterances)
+            setRefinementMetadata(result.metadata)
+            setRefinementStale(result.stale)
+            setActiveView('refined')
+          })
         } catch (e) {
           errors.push(`${t('editor.refineTranscription')}: ${e instanceof Error ? e.message : String(e)}`)
         }
       }
 
       if (hasAnalysis) {
-        setPipelineStatus({ key: 'analysis.generating', step: 'analyze' })
+        showStatus({ key: 'analysis.generating', step: 'analyze' })
         try {
           const result = await api.generateAnalysis(transcriptionId, {
             template: hasAnalysis.template,
@@ -351,7 +367,7 @@ function MainApp() {
             agenda: hasAnalysis.agenda,
           })
           const analysisResult = result as { id: string; template?: string; language?: string; llm_provider?: string; llm_model?: string; created_at?: string; source?: 'original' | 'refined' }
-          addAnalysis({
+          ifOpen(() => addAnalysis({
             id: analysisResult.id,
             template: analysisResult.template || null,
             language: analysisResult.language || null,
@@ -359,30 +375,32 @@ function MainApp() {
             llm_model: analysisResult.llm_model || null,
             created_at: analysisResult.created_at || null,
             source: analysisResult.source || null,
-          })
+          }))
         } catch (e) {
           errors.push(`${t('editor.analysis')}: ${e instanceof Error ? e.message : String(e)}`)
         }
       }
 
       if (hasTranslation) {
-        setPipelineStatus({ key: 'pipeline.translating', step: 'translate', params: { language: t(`languages.${hasTranslation}`) } })
+        showStatus({ key: 'pipeline.translating', step: 'translate', params: { language: t(`languages.${hasTranslation}`) } })
         try {
           const result = await api.translateTranscription(transcriptionId, hasTranslation)
-          setTranslatedUtterances(result.utterances)
-          setTranslationLanguage(result.language)
-          setTranslationMetadata({
-            source: result.source,
-            stale: result.stale,
-            sourceAvailable: result.source_available,
+          ifOpen(() => {
+            setTranslatedUtterances(result.utterances)
+            setTranslationLanguage(result.language)
+            setTranslationMetadata({
+              source: result.source,
+              stale: result.stale,
+              sourceAvailable: result.source_available,
+            })
           })
         } catch (e) {
           errors.push(`${t('editor.translate')}: ${e instanceof Error ? e.message : String(e)}`)
         }
       }
 
-      setPipelineStatus(null)
-      if (errors.length > 0) setPipelineErrors(errors)
+      releaseMine()
+      if (errors.length > 0) ifOpen(() => setPipelineErrors(errors))
     }
 
     run()

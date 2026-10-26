@@ -68,21 +68,27 @@ export function TranscriptionList() {
     const ext = item.original_filename.split('.').pop()?.toLowerCase() || ''
     setFile({ id: item.file_id, original_filename: item.original_filename, media_type: ext, file_size: item.file_size, has_video: item.has_video })
     setCurrentView('detail')
+    // Another transcription may have been opened while a request was in flight.
+    const isCurrent = () => useStore.getState().transcriptionId === item.id
     if (item.status === 'completed') {
       try {
         const result = await api.getTranscription(item.id)
+        if (!isCurrent()) return
         setResult(result)
         setSpeakerMappings(result.speaker_mappings || {})
         try {
           const refinement = await api.getRefinement(item.id)
+          if (!isCurrent()) return
           setRefinedUtterances(refinement.utterances)
           setRefinementMetadata(refinement.metadata)
           setRefinementStale(refinement.stale)
         } catch {
+          if (!isCurrent()) return
           clearRefinement()
         }
         try {
           const translation = await api.getTranslation(item.id)
+          if (!isCurrent()) return
           setTranslatedUtterances(translation.utterances)
           setTranslationLanguage(translation.language)
           setTranslationMetadata({
@@ -91,9 +97,11 @@ export function TranscriptionList() {
             sourceAvailable: translation.source_available,
           })
         } catch {
+          if (!isCurrent()) return
           clearTranslation()
         }
       } catch {
+        if (!isCurrent()) return
         reset()
         const currentHistory = useStore.getState().transcriptionHistory
         setHistory(currentHistory.filter((h) => h.id !== item.id))
