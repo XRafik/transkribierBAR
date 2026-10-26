@@ -13,6 +13,8 @@ vi.mock('../../utils/platformDetect', () => ({
 
 const mic1 = { kind: 'audioinput', deviceId: 'mic1', label: 'Mic 1' }
 const mic2 = { kind: 'audioinput', deviceId: 'mic2', label: 'Mic 2' }
+const mon1 = { kind: 'audioinput', deviceId: 'mon1', label: 'Monitor 1' }
+const defaultMic = { kind: 'audioinput', deviceId: 'default', label: 'Default' }
 
 function stubDevices(devices: object[]) {
   Object.defineProperty(navigator, 'mediaDevices', {
@@ -72,6 +74,37 @@ describe('RecordingSources second device auto-select', () => {
     const onChange = renderSources({ secondAudioDeviceId: 'mic3' })
     await new Promise((r) => setTimeout(r, 20))
     expect(onChange).not.toHaveBeenCalled()
+  })
+})
+
+describe('RecordingSources default microphone', () => {
+  it('does not auto-pick or offer the first input while the microphone is the default', async () => {
+    stubDevices([mic1, mon1])
+    const onChange = renderSources({ audioDeviceId: '' })
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith('mon1'))
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(screen.getByLabelText('System audio source')).toHaveTextContent(/^Monitor 1$/)
+  })
+
+  it('also skips the "default" entry', async () => {
+    stubDevices([defaultMic, mic1, mon1])
+    const onChange = renderSources({ audioDeviceId: '' })
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith('mon1'))
+    expect(onChange).toHaveBeenCalledTimes(1)
+  })
+
+  it('replaces a second device that is the default microphone', async () => {
+    stubDevices([mic1, mon1])
+    const onChange = renderSources({ audioDeviceId: '', secondAudioDeviceId: 'mic1' })
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith('mon1'))
+    expect(onChange).toHaveBeenCalledTimes(1)
+  })
+
+  it('excludes only the chosen microphone once one is chosen', async () => {
+    stubDevices([mic1, mon1])
+    const onChange = renderSources({ audioDeviceId: 'mon1' })
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith('mic1'))
+    expect(onChange).toHaveBeenCalledTimes(1)
   })
 })
 
