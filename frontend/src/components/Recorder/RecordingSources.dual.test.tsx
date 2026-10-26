@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import i18n from '../../i18n'
 import { RecordingSources } from './RecordingSources'
 
@@ -74,3 +74,56 @@ describe('RecordingSources second device auto-select', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 })
+
+describe('RecordingSources labels', () => {
+  // The source cards' toggle buttons carry the same accessible names.
+  const PICKER = { selector: 'select, output' }
+
+  const cam1 = { kind: 'videoinput', deviceId: 'cam1', label: 'Cam 1' }
+  const cam2 = { kind: 'videoinput', deviceId: 'cam2', label: 'Cam 2' }
+
+  it('labels the microphone and second-device selects', async () => {
+    stubDevices([mic1, mic2, { kind: 'audioinput', deviceId: 'mic3', label: 'Mic 3' }])
+    renderSources({ secondAudioDeviceId: 'mic2' })
+    const micSelect = await screen.findByLabelText('Microphone', PICKER)
+    expect(micSelect.tagName).toBe('SELECT')
+    const second = screen.getByLabelText('System audio source')
+    expect(second.tagName).toBe('SELECT')
+    expect(second).not.toBe(micSelect)
+  })
+
+  it('labels the single-device outputs', async () => {
+    stubDevices([mic1, mic2])
+    renderSources({ secondAudioDeviceId: 'mic2' })
+    await waitFor(() => expect(screen.getByLabelText('System audio source').tagName).toBe('OUTPUT'))
+  })
+
+  it('labels the camera select and output', async () => {
+    stubDevices([mic1, cam1, cam2])
+    const { unmount } = render(<Camera />)
+    expect((await screen.findByLabelText('Camera', PICKER)).tagName).toBe('SELECT')
+    unmount()
+    stubDevices([mic1, cam1])
+    render(<Camera />)
+    await waitFor(() => expect(screen.getByLabelText('Camera', PICKER).tagName).toBe('OUTPUT'))
+  })
+})
+
+function Camera() {
+  return (
+    <RecordingSources
+      useMicrophone
+      onUseMicrophoneChange={vi.fn()}
+      audioDeviceId="mic1"
+      onAudioDeviceChange={vi.fn()}
+      captureSystemAudio={false}
+      onCaptureSystemAudioChange={vi.fn()}
+      secondAudioDeviceId=""
+      onSecondAudioDeviceChange={vi.fn()}
+      useCamera
+      onUseCameraChange={vi.fn()}
+      videoDeviceId="cam1"
+      onVideoDeviceChange={vi.fn()}
+    />
+  )
+}
