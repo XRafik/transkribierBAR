@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import i18n from '../../i18n'
 import { useStore } from '../../store'
 import { api, ApiError } from '../../api/client'
@@ -52,5 +52,30 @@ describe('AnalysisView deleting an analysis', () => {
     fireEvent.click(await screen.findByTitle('Delete'))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Deleting the analysis failed.')
+  })
+})
+
+describe('AnalysisView removing an item', () => {
+  async function openCard() {
+    render(<AnalysisView />)
+    fireEvent.click(await screen.findByText('Summary with chapters'))
+    return screen.findByTitle('Remove chapter')
+  }
+
+  it('does not call the API when the confirmation is cancelled', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const del = vi.spyOn(api, 'deleteAnalysisItem').mockResolvedValue(summary)
+    fireEvent.click(await openCard())
+
+    expect(confirmSpy).toHaveBeenCalledWith('Remove this item from the analysis?')
+    expect(del).not.toHaveBeenCalled()
+  })
+
+  it('calls the API when the confirmation is accepted', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const del = vi.spyOn(api, 'deleteAnalysisItem').mockResolvedValue(summary)
+    fireEvent.click(await openCard())
+
+    await waitFor(() => expect(del).toHaveBeenCalledWith('t1', 'an1', 'chapters', 0))
   })
 })

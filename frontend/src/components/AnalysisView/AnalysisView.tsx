@@ -148,6 +148,7 @@ function AnalysisCard({ analysisId, transcriptionId, templates, baseName, onDele
   }
 
   const handleDeleteItem = async (field: string, index: number) => {
+    if (!confirm(t('analysis.confirmDeleteItem'))) return
     try {
       const updated = await api.deleteAnalysisItem(transcriptionId, analysisId, field, index)
       setResult(updated)
