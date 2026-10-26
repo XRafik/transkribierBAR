@@ -76,7 +76,7 @@ The answer contains the `id` of the transcription (`TRANSCRIPTION_ID`) and the s
 | `initial_prompt` | Optional context for the transcription. |
 | `hotwords` | Optional technical terms, separated by commas. |
 
-> **Always send the model.** This installation offers only the model {{default_model}}. The server does not check the field `model`. If you leave it out, it passes the model `base` on to speech recognition, which this installation does not offer. So always send `"model": "{{default_model}}"`.
+> **The model.** This installation offers only the model {{default_model}}. If you leave out `model`, the installation's default model {{default_model}} is used. A model this installation does not offer is rejected with status 422, and the message names the rejected model.
 
 **3. Wait for the result.** Query the status until it is `completed` or `failed`:
 

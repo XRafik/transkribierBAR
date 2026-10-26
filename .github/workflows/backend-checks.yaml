@@ -33,7 +33,4 @@ jobs:
 
       - name: Test
         working-directory: backend
-        env:
-          # The OpenAI client refuses an empty key; the tests never use it.
-          LLM_API_KEY: dummy
         run: pytest

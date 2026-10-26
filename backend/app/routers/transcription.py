@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from app.config import settings
 from app.dependencies import get_current_user
-from app.router_helpers import ensure_transcription_owned, load_speaker_mappings
+from app.router_helpers import ensure_transcription_owned, load_speaker_mappings, resolve_whisper_model
 from app.models import (
     UserInfo, TranscriptionSettings as TranscriptionSettingsModel,
     TranscriptionStatus, TranscriptionListItem, Utterance, SpeakerMappingRequest,
@@ -41,6 +41,7 @@ async def start_transcription(
     req: TranscriptionSettingsModel,
     user: UserInfo = Depends(get_current_user),
 ):
+    req.model = resolve_whisper_model(req.model)
     async with get_db() as db:
         cursor = await db.execute(
             "SELECT id, file_path, mp3_path FROM files WHERE id = ? AND user_id = ?",
@@ -307,7 +308,13 @@ async def export_transcription(transcription_id: str, format_type: str, user: Us
         content = generate_txt(utterances, speaker_map)
         media_type = "text/plain"
     else:
-        content = json.dumps([u.model_dump() for u in utterances], indent=2)
+        content = json.dumps(
+            [
+                {**u.model_dump(), "speaker": speaker_map.get(u.speaker, u.speaker)}
+                for u in utterances
+            ],
+            indent=2,
+        )
         media_type = "application/json"
 
     inc(downloads_total, format_type)

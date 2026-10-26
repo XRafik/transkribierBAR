@@ -1,6 +1,16 @@
 from fastapi import HTTPException
 
+from app.config import settings
 from app.database import get_db
+
+
+def resolve_whisper_model(model: str | None) -> str:
+    """The requested model, or the instance default; 422 if the instance does not offer it."""
+    if not model:
+        return settings.DEFAULT_WHISPER_MODEL
+    if model not in settings.WHISPER_MODELS:
+        raise HTTPException(status_code=422, detail=f"Model '{model}' is not available on this instance")
+    return model
 
 
 async def ensure_transcription_owned(db, transcription_id: str, user_id: str) -> None:
