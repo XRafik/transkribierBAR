@@ -3,6 +3,8 @@ os.environ.setdefault("ENABLE_API_TOKENS", "true")
 os.environ.setdefault("DEV_MODE", "true")
 os.environ.setdefault("ENABLE_METRICS", "true")
 os.environ.setdefault("LLM_API_KEY", "test-key")
+os.environ.setdefault("WHISPER_MODELS", "base,large-v3,large-v3-turbo")
+os.environ.setdefault("DEFAULT_WHISPER_MODEL", "base")
 
 import asyncio
 import tempfile

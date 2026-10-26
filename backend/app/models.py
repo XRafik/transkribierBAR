@@ -27,7 +27,7 @@ class FileInfo(BaseModel):
 class TranscriptionSettings(BaseModel):
     file_id: str
     language: str | None = None
-    model: str = "base"
+    model: str | None = None
     min_speakers: int = 0
     max_speakers: int = 0
     initial_prompt: str | None = None
@@ -284,7 +284,7 @@ class InvitationAcceptResponse(BaseModel):
 class TranscriptionPresetCreate(BaseModel):
     name: str
     language: str | None = None
-    model: str = "base"
+    model: str | None = None
     min_speakers: int = 0
     max_speakers: int = 0
     initial_prompt: str | None = None
@@ -293,6 +293,7 @@ class TranscriptionPresetCreate(BaseModel):
 
 class TranscriptionPresetResponse(TranscriptionPresetCreate):
     id: str
+    model: str
     created_at: str | None = None
     updated_at: str | None = None
 
