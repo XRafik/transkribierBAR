@@ -37,6 +37,16 @@ export function parseServerDate(value: string): Date {
   return new Date(hasZone ? iso : iso + 'Z')
 }
 
+export function formatDate(value: string | Date, locale: string): string {
+  const date = typeof value === 'string' ? parseServerDate(value) : value
+  return date.toLocaleDateString(locale)
+}
+
+export function formatDateTime(value: string | Date, locale: string): string {
+  const date = typeof value === 'string' ? parseServerDate(value) : value
+  return date.toLocaleString(locale)
+}
+
 export function downloadFile(content: string, filename: string, mimeType: string) {
   const blob = new Blob([content], { type: mimeType })
   const url = URL.createObjectURL(blob)

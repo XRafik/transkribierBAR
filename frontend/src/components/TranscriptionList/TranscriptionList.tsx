@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../../store'
 import { api } from '../../api/client'
+import { formatDate } from '../../utils/format'
 import type { TranscriptionListItem } from '../../api/types'
 
 function PencilButton({ onClick, title }: { onClick: (e: React.MouseEvent) => void; title: string }) {
@@ -19,7 +20,7 @@ function PencilButton({ onClick, title }: { onClick: (e: React.MouseEvent) => vo
 }
 
 export function TranscriptionList() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const history = useStore((s) => s.transcriptionHistory)
   const setHistory = useStore((s) => s.setTranscriptionHistory)
   const setTranscriptionId = useStore((s) => s.setTranscriptionId)
@@ -280,7 +281,7 @@ export function TranscriptionList() {
                 {t(`transcription.status.${item.status}`, item.status)}
               </span>
               <span className="text-gray-500 text-xs">
-                {new Date(item.created_at + 'Z').toLocaleDateString('de-DE')}
+                {formatDate(item.created_at, i18n.language)}
               </span>
               {item.archived && (
                 <span className="text-xs text-blue-400" title={t('transcription.archived')}>

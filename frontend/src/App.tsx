@@ -15,7 +15,7 @@ import { ChunkErrorBoundary } from './components/ChunkErrorBoundary'
 import { InviteLanding } from './components/InviteLanding'
 import { resolveModel } from './utils/models'
 import { leaveMessages } from './utils/leaveMessages'
-import { parseServerDate } from './utils/format'
+import { formatDate, parseServerDate } from './utils/format'
 import { pipelineTargetToRun } from './utils/pipelineTarget'
 
 const RecorderPanel = lazy(() =>
@@ -64,7 +64,7 @@ function BackButton() {
 }
 
 export function DetailActions() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const transcriptionId = useStore((s) => s.transcriptionId)
   const history = useStore((s) => s.transcriptionHistory)
   const setHistory = useStore((s) => s.setTranscriptionHistory)
@@ -146,7 +146,7 @@ export function DetailActions() {
         {t('transcription.delete')}
       </button>
       <span className={`text-xs ${parseServerDate(item.expires_at).getTime() - now < 24 * 60 * 60 * 1000 ? 'text-red-400' : 'text-gray-500'}`}>
-        {t('transcription.expiresOn', { date: parseServerDate(item.expires_at).toLocaleDateString('de-DE') })}
+        {t('transcription.expiresOn', { date: formatDate(item.expires_at, i18n.language) })}
       </span>
     </div>
   )

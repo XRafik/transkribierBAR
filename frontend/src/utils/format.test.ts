@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatFileSize, parseServerDate } from './format'
+import { formatDate, formatDateTime, formatFileSize, parseServerDate } from './format'
 
 describe('formatFileSize', () => {
   it('formats bytes below 1 KB', () => {
@@ -38,5 +38,26 @@ describe('parseServerDate', () => {
 
   it('leaves an ISO string with an offset alone', () => {
     expect(parseServerDate('2027-01-22T09:15:03+02:00').toISOString()).toBe('2027-01-22T07:15:03.000Z')
+  })
+})
+
+describe('formatDate / formatDateTime', () => {
+  const iso = '2027-01-22T09:15:03Z'
+  const d = new Date(iso)
+
+  it('formats a date in the given locale', () => {
+    expect(formatDate(iso, 'en')).toBe(d.toLocaleDateString('en'))
+    expect(formatDate(iso, 'de')).toBe(d.toLocaleDateString('de'))
+    expect(formatDate(iso, 'en')).not.toBe(formatDate(iso, 'de'))
+  })
+
+  it('formats date and time in the given locale', () => {
+    expect(formatDateTime(iso, 'en')).toBe(d.toLocaleString('en'))
+    expect(formatDateTime(iso, 'de')).toBe(d.toLocaleString('de'))
+  })
+
+  it('reads designator-less server strings as UTC and accepts Date objects', () => {
+    expect(formatDate('2027-01-22 09:15:03', 'en')).toBe(d.toLocaleDateString('en'))
+    expect(formatDate(d, 'en')).toBe(d.toLocaleDateString('en'))
   })
 })

@@ -94,6 +94,14 @@ describe('TranscriptionList status badge', () => {
     expect(screen.getByText('weird')).toBeInTheDocument()
   })
 
+  it('formats the creation date in the UI language', async () => {
+    vi.mocked(api.listTranscriptions).mockResolvedValue([item('a', 'completed')])
+    render(<TranscriptionList />)
+    await screen.findByText('a.mp3')
+    expect(screen.queryByText(/\d{2}\.\d{2}\.\d{4}/)).not.toBeInTheDocument()
+    expect(screen.getByText(new Date('2026-01-01T00:00:00Z').toLocaleDateString('en'))).toBeInTheDocument()
+  })
+
   it('shows English status labels', async () => {
     vi.mocked(api.listTranscriptions).mockResolvedValue([item('a', 'completed')])
     render(<TranscriptionList />)
