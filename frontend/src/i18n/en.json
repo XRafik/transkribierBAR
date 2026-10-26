@@ -220,6 +220,8 @@
     "analysis": "Analysis"
   },
   "analysis": {
+    "removeChapter": "Remove chapter",
+    "removeItem": "Remove item",
     "selectTemplate": "Select a template",
     "customPrompt": "Custom",
     "templateSummary": "Summary with chapters",

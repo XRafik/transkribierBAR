@@ -220,6 +220,8 @@
     "analysis": "Analyse"
   },
   "analysis": {
+    "removeChapter": "Kapitel entfernen",
+    "removeItem": "Eintrag entfernen",
     "selectTemplate": "Vorlage auswählen",
     "customPrompt": "Eigene Anweisung",
     "templateSummary": "Zusammenfassung mit Kapiteln",
