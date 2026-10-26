@@ -78,6 +78,12 @@
     "success": "Transkription erfolgreich!",
     "failed": "Transkription fehlgeschlagen",
     "failedDetail": "Fehlermeldung: {{message}}",
+    "errors": {
+      "server_restarted": "Der Server wurde neu gestartet, während diese Transkription lief.",
+      "timeout": "Die Spracherkennung hat diese Transkription nicht innerhalb des Zeitlimits abgeschlossen.",
+      "asr_unreachable": "Die Anfrage an die Spracherkennung ist fehlgeschlagen.",
+      "asr_failed": "Die Spracherkennung hat für diese Transkription einen Fehler gemeldet."
+    },
     "delete": "Transkription löschen",
     "history": "Meine Transkriptionen",
     "doubleClickToRename": "Doppelklick zum Umbenennen",

@@ -84,7 +84,7 @@ The answer contains the `id` of the transcription (`TRANSCRIPTION_ID`) and the s
 curl -H "Authorization: Bearer tw_…" https://transcription.uni-osnabrueck.de/api/status/TRANSCRIPTION_ID
 ```
 
-The status is `pending`, `processing`, `completed` or `failed`. With `failed`, the field `error` contains the reason. Instead of repeating the query, you can listen on the WebSocket from the section "Authentication". It sends a message such as `{"type": "status", "status": "processing"}` every 5 seconds and closes after `completed` or `failed`. If the token is invalid, it closes with code 4001. If the transcription does not exist or is not yours, it closes with code 4003.
+The status is `pending`, `processing`, `completed` or `failed`. With `failed`, the field `error` contains the reason, and `error_code` names it with a fixed code: `server_restarted` (the server restarted while the transcription was running), `timeout` (the speech recognition did not finish within the time limit), `asr_unreachable` (the request to the speech recognition failed), `asr_failed` (the speech recognition reported an error) or `unknown` (any other reason, which only `error` describes). If no code is stored, `error_code` is `null`. Instead of repeating the query, you can listen on the WebSocket from the section "Authentication". It sends a message such as `{"type": "status", "status": "processing"}` every 5 seconds and closes after `completed` or `failed`. If the token is invalid, it closes with code 4001. If the transcription does not exist or is not yours, it closes with code 4003.
 
 **4. Fetch the result.** As long as the transcription is not finished, this call is answered with status 400:
 

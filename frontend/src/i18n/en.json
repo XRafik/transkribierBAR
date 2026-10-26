@@ -78,6 +78,12 @@
     "success": "Transcription successful!",
     "failed": "Transcription failed",
     "failedDetail": "Error message: {{message}}",
+    "errors": {
+      "server_restarted": "The server restarted while this transcription was running.",
+      "timeout": "The speech recognition did not finish this transcription within the time limit.",
+      "asr_unreachable": "The request to the speech recognition failed.",
+      "asr_failed": "The speech recognition reported an error for this transcription."
+    },
     "delete": "Delete transcription",
     "history": "My Transcriptions",
     "doubleClickToRename": "Double-click to rename",

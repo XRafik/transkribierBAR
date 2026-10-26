@@ -168,6 +168,7 @@ MIGRATIONS = [
     ("translation_source_hash", "transcriptions", "translation_source_hash TEXT"),
     ("source", "analyses", "source TEXT"),
     ("source_hash", "analyses", "source_hash TEXT"),
+    ("error_code", "transcriptions", "error_code TEXT"),
 ]
 
 

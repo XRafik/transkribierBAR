@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../../store'
 import { api } from '../../api/client'
+import { transcriptionErrorMessage } from '../../utils/transcriptionError'
 
 interface TranscriptionProgressCardProps {
   pendingTranscription?: boolean
@@ -25,7 +26,8 @@ export function TranscriptionProgressCard({
   const retriesRef = useRef(0)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const doneRef = useRef(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  // Kept as received and translated when rendered, so a language switch applies.
+  const [failure, setFailure] = useState<{ code?: string | null; message?: string | null } | null>(null)
 
   useEffect(() => {
     if (!transcriptionId || status === 'completed' || status === 'failed') return
@@ -49,10 +51,10 @@ export function TranscriptionProgressCard({
       setResult(result)
     }
 
-    const handleFailed = (error?: string) => {
+    const handleFailed = (code?: string | null, message?: string | null) => {
       markDone()
       setStatus('failed')
-      if (error) setErrorMessage(error)
+      setFailure({ code, message })
     }
 
     const connect = () => {
@@ -67,7 +69,7 @@ export function TranscriptionProgressCard({
           if (data.status === 'completed') {
             handleCompleted()
           } else if (data.status === 'failed') {
-            handleFailed(data.error)
+            handleFailed(data.error_code, data.error)
           } else {
             setStatus(data.status)
           }
@@ -88,7 +90,7 @@ export function TranscriptionProgressCard({
               if (s.status === 'completed') {
                 handleCompleted()
               } else if (s.status === 'failed') {
-                handleFailed(s.error || undefined)
+                handleFailed(s.error_code, s.error)
               }
             } catch { /* ignore */ }
           }, 10000)
@@ -169,6 +171,7 @@ export function TranscriptionProgressCard({
   if (!transcriptionId || status === 'completed') return null
 
   if (status === 'failed') {
+    const errorMessage = failure && transcriptionErrorMessage(failure.code, failure.message, t)
     return (
       <div className="mx-6 my-4 p-5 bg-red-900/30 rounded-lg border border-red-700">
         <div className="flex items-start justify-between gap-3">

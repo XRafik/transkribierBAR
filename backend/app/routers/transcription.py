@@ -5,6 +5,7 @@ import time
 import traceback
 import uuid
 from datetime import datetime, timedelta, timezone
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from app.config import settings
 from app.dependencies import get_current_user
@@ -94,10 +95,29 @@ def _job_timeout_for(audio_duration: float | None) -> float:
     return job_timeout
 
 
+class ASRJobFailed(RuntimeError):
+    """The ASR server reported the job as failed."""
+
+
+def _error_code_for(e: Exception) -> str:
+    """The stable code stored next to a failure's English message.
+
+    The message stays English because API clients may rely on it; the web
+    interface translates the known codes instead.
+    """
+    if isinstance(e, ASRJobFailed):
+        return "asr_failed"
+    if isinstance(e, TimeoutError):
+        return "timeout"
+    if isinstance(e, httpx.HTTPError):
+        return "asr_unreachable"
+    return "unknown"
+
+
 async def _poll_until_done(backend, asr_job_id: str, audio_duration: float | None) -> None:
     """Poll the ASR backend until the job finishes, or give up.
 
-    Raises RuntimeError if the backend reports failure, or TimeoutError if the job
+    Raises ASRJobFailed if the backend reports failure, or TimeoutError if the job
     stays unfinished past its ceiling. Without the ceiling a backend that keeps
     reporting "processing" with no error would be polled forever.
     """
@@ -109,7 +129,7 @@ async def _poll_until_done(backend, asr_job_id: str, audio_duration: float | Non
         if status.status == "completed":
             return
         elif status.status == "failed":
-            raise RuntimeError(status.error or "Transcription failed")
+            raise ASRJobFailed(status.error or "Transcription failed")
 
         elapsed = time.monotonic() - poll_started
         if elapsed > job_timeout:
@@ -221,8 +241,8 @@ async def _run_transcription(transcription_id: str, file_path: str, req: Transcr
     except Exception as e:
         async with get_db() as db:
             cursor = await db.execute(
-                "UPDATE transcriptions SET status = ?, error_message = ? WHERE id = ?",
-                ("failed", str(e), transcription_id),
+                "UPDATE transcriptions SET status = ?, error_message = ?, error_code = ? WHERE id = ?",
+                ("failed", str(e), _error_code_for(e), transcription_id),
             )
             await db.commit()
 
@@ -244,13 +264,15 @@ async def _run_transcription(transcription_id: str, file_path: str, req: Transcr
 async def get_status(transcription_id: str, user: UserInfo = Depends(get_current_user)):
     async with get_db() as db:
         cursor = await db.execute(
-            "SELECT id, status, error_message FROM transcriptions WHERE id = ? AND user_id = ?",
+            "SELECT id, status, error_message, error_code FROM transcriptions WHERE id = ? AND user_id = ?",
             (transcription_id, user.id),
         )
         row = await cursor.fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="Transcription not found")
-    return TranscriptionStatus(id=row["id"], status=row["status"], error=row["error_message"])
+    return TranscriptionStatus(
+        id=row["id"], status=row["status"], error=row["error_message"], error_code=row["error_code"],
+    )
 
 
 @router.get("/api/transcription/{transcription_id}")
@@ -531,7 +553,7 @@ async def websocket_status(websocket: WebSocket, transcription_id: str):
         while True:
             async with get_db() as db:
                 cursor = await db.execute(
-                    "SELECT status, error_message FROM transcriptions WHERE id = ?",
+                    "SELECT status, error_message, error_code FROM transcriptions WHERE id = ?",
                     (transcription_id,),
                 )
                 row = await cursor.fetchone()
@@ -546,6 +568,8 @@ async def websocket_status(websocket: WebSocket, transcription_id: str):
             msg = {"type": "status", "status": status}
             if status == "failed" and row["error_message"]:
                 msg["error"] = row["error_message"]
+            if status == "failed" and row["error_code"]:
+                msg["error_code"] = row["error_code"]
             await websocket.send_json(msg)
             inc(websocket_messages_sent_total, "status")
 
