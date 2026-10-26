@@ -4,6 +4,14 @@ import { useStore } from '../../store'
 import { api } from '../../api/client'
 import { transcriptionErrorMessage } from '../../utils/transcriptionError'
 
+// The detail header shows transcriptionTitle and the archive the history entry.
+// The user may have opened another transcription by the time the title comes.
+function applyGeneratedTitle(id: string, title: string) {
+  const { transcriptionHistory, setTranscriptionHistory, transcriptionId, setTranscriptionTitle } = useStore.getState()
+  setTranscriptionHistory(transcriptionHistory.map((h) => (h.id === id ? { ...h, title } : h)))
+  if (transcriptionId === id) setTranscriptionTitle(title)
+}
+
 interface TranscriptionProgressCardProps {
   pendingTranscription?: boolean
   submitError?: string | null
@@ -51,6 +59,20 @@ export function TranscriptionProgressCard({
       setResult(result)
     }
 
+    // The server asks the LLM for the title only after completion and sends it
+    // on this socket, then closes it, also when no title comes. The socket is
+    // handed off so it outlives this card, which unmounts once the editor opens.
+    const awaitTitle = (ws: WebSocket) => {
+      wsRef.current = null
+      ws.onclose = null
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data)
+        if (data.type !== 'title') return
+        applyGeneratedTitle(transcriptionId, data.title)
+        ws.close()
+      }
+    }
+
     const handleFailed = (code?: string | null, message?: string | null) => {
       markDone()
       setStatus('failed')
@@ -67,6 +89,8 @@ export function TranscriptionProgressCard({
         const data = JSON.parse(event.data)
         if (data.type === 'status') {
           if (data.status === 'completed') {
+            if (data.title) applyGeneratedTitle(transcriptionId, data.title)
+            else awaitTitle(ws)
             handleCompleted()
           } else if (data.status === 'failed') {
             handleFailed(data.error_code, data.error)

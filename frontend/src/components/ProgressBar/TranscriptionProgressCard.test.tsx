@@ -4,6 +4,7 @@ import { useStore } from '../../store'
 import { api } from '../../api/client'
 import i18n from '../../i18n'
 import { TranscriptionProgressCard } from './TranscriptionProgressCard'
+import type { TranscriptionListItem } from '../../api/types'
 
 vi.mock('../../api/client', () => ({
   api: {
@@ -85,5 +86,101 @@ describe('TranscriptionProgressCard failure reason', () => {
 
     expect(screen.getByText(germanDetail('transcription.errors.timeout'))).toBeInTheDocument()
     expect(screen.queryByText(/ASR job x stuck/)).toBeNull()
+  })
+})
+
+function historyItem(id: string): TranscriptionListItem {
+  return {
+    id,
+    file_id: `f-${id}`,
+    original_filename: `${id}.mp3`,
+    status: 'processing',
+    language: 'en',
+    model: 'm',
+    created_at: '2026-01-01T00:00:00Z',
+    file_size: 1,
+    expires_at: '2026-04-01T00:00:00Z',
+    archived: false,
+    title: null,
+    has_video: false,
+  }
+}
+
+function titleOf(id: string): string | null | undefined {
+  return useStore.getState().transcriptionHistory.find((h) => h.id === id)?.title
+}
+
+describe('TranscriptionProgressCard generated title', () => {
+  let sockets: FakeSocket[]
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    useStore.getState().reset()
+    sockets = []
+    vi.mocked(api.connectWebSocket).mockImplementation(() => {
+      const socket = new FakeSocket()
+      sockets.push(socket)
+      return socket as unknown as WebSocket
+    })
+    vi.mocked(api.getTranscription).mockResolvedValue({
+      id: 't1', status: 'completed', utterances: [], text: '', language: 'en', speaker_mappings: {},
+    } as never)
+    useStore.setState({
+      transcriptionId: 't1',
+      transcriptionStatus: 'processing',
+      transcriptionHistory: [historyItem('t1'), historyItem('t2')],
+    })
+  })
+
+  async function complete(extra: Record<string, unknown> = {}) {
+    await act(async () => sockets[0].receive({ type: 'status', status: 'completed', ...extra }))
+  }
+
+  it('shows a title that comes after completion in the detail header and the archive', async () => {
+    render(<TranscriptionProgressCard />)
+    await complete()
+    expect(useStore.getState().transcriptionStatus).toBe('completed')
+    expect(sockets[0].close).not.toHaveBeenCalled()
+
+    act(() => sockets[0].receive({ type: 'title', title: 'Weekly meeting' }))
+
+    expect(useStore.getState().transcriptionTitle).toBe('Weekly meeting')
+    expect(titleOf('t1')).toBe('Weekly meeting')
+    expect(titleOf('t2')).toBeNull()
+    expect(sockets[0].close).toHaveBeenCalled()
+  })
+
+  it('shows a title that rides on the completed message', async () => {
+    render(<TranscriptionProgressCard />)
+    await complete({ title: 'Weekly meeting' })
+
+    expect(useStore.getState().transcriptionTitle).toBe('Weekly meeting')
+    expect(titleOf('t1')).toBe('Weekly meeting')
+  })
+
+  // The card unmounts once the editor opens, and the user may leave or open
+  // another transcription before the title arrives.
+  it('still takes the title after the card unmounted, without touching another open header', async () => {
+    const { unmount } = render(<TranscriptionProgressCard />)
+    await complete()
+    unmount()
+    expect(sockets[0].close).not.toHaveBeenCalled()
+    useStore.setState({ transcriptionId: 't2', transcriptionTitle: 'Other' })
+
+    act(() => sockets[0].receive({ type: 'title', title: 'Weekly meeting' }))
+
+    expect(titleOf('t1')).toBe('Weekly meeting')
+    expect(useStore.getState().transcriptionTitle).toBe('Other')
+  })
+
+  it('changes nothing when the socket closes without a title', async () => {
+    render(<TranscriptionProgressCard />)
+    await complete()
+
+    act(() => sockets[0].onclose?.())
+
+    expect(useStore.getState().transcriptionTitle).toBeNull()
+    expect(titleOf('t1')).toBeNull()
+    expect(api.connectWebSocket).toHaveBeenCalledTimes(1)
   })
 })

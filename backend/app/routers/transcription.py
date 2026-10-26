@@ -227,14 +227,26 @@ async def _run_transcription(transcription_id: str, file_path: str, req: Transcr
             provider = get_llm_provider()
             if provider and result.utterances:
                 transcript_text = " ".join(u.text for u in result.utterances)
-                title = await _generate_title(provider, transcript_text)
-                if title:
-                    async with get_db() as db:
+                try:
+                    title = await _generate_title(provider, transcript_text)
+                except Exception as e:
+                    logging.warning("Title generation failed for %s: %s", transcription_id, e)
+                    title = ""
+                async with get_db() as db:
+                    if title and title.strip():
                         await db.execute(
                             "UPDATE transcriptions SET title = ? WHERE id = ?",
                             (title, transcription_id),
                         )
-                        await db.commit()
+                    else:
+                        # The status WebSocket waits while the title is NULL; ''
+                        # tells it the attempt is over. The guard keeps a title
+                        # the user set meanwhile. API responses show '' as null.
+                        await db.execute(
+                            "UPDATE transcriptions SET title = '' WHERE id = ? AND title IS NULL",
+                            (transcription_id,),
+                        )
+                    await db.commit()
         except Exception as e:
             logging.warning("Title generation failed for %s: %s", transcription_id, e)
 
@@ -484,7 +496,7 @@ async def list_transcriptions(user: UserInfo = Depends(get_current_user)):
             status=r["status"], language=r["language"], model=r["model"],
             created_at=r["created_at"], file_size=r["file_size"],
             expires_at=r["expires_at"], archived=bool(r["is_archived"]),
-            title=r["title"], has_video=bool(r["has_video"] or 0),
+            title=r["title"] or None, has_video=bool(r["has_video"] or 0),
         ).model_dump()
         for r in rows
     ]
@@ -505,6 +517,57 @@ async def update_title(transcription_id: str, body: TitleRequest, user: UserInfo
         )
         await db.commit()
     return {"status": "ok"}
+
+
+# Seconds between the status WebSocket's checks of the transcription row.
+WS_POLL_SECONDS = 5
+
+
+def _title_wait_left(completed_at: str | None) -> float:
+    """Seconds left of LLM_TIMEOUT, the title request's own limit, since completion.
+
+    A client that connects late waits only for the rest. A row without
+    completed_at gets the whole limit.
+    """
+    try:
+        completed = datetime.fromisoformat(completed_at)
+    except (TypeError, ValueError):
+        return settings.LLM_TIMEOUT
+    if completed.tzinfo is None:
+        completed = completed.replace(tzinfo=timezone.utc)
+    return settings.LLM_TIMEOUT - (datetime.now(timezone.utc) - completed).total_seconds()
+
+
+async def _send_title_when_ready(websocket: WebSocket, transcription_id: str, completed_at: str | None) -> None:
+    """Send the title that _run_transcription asks the LLM for after completion.
+
+    Checks the row at the status loop's interval while its title is NULL, the
+    attempt still running. Sends the title if the attempt stored one ('' means
+    it ended without). Gives up silently once LLM_TIMEOUT has passed since
+    completion, when the row is gone, or when the client leaves.
+    """
+    deadline = time.monotonic() + _title_wait_left(completed_at)
+    while (left := deadline - time.monotonic()) > 0:
+        try:
+            # Waits like asyncio.sleep, but also notices a client that left. The
+            # status loop notices that through a failing send; this loop sends
+            # nothing until the title is there.
+            message = await asyncio.wait_for(websocket.receive(), timeout=min(WS_POLL_SECONDS, left))
+            if message["type"] == "websocket.disconnect":
+                return
+        except asyncio.TimeoutError:
+            pass
+
+        async with get_db() as db:
+            cursor = await db.execute("SELECT title FROM transcriptions WHERE id = ?", (transcription_id,))
+            row = await cursor.fetchone()
+        if not row:
+            return
+        if row["title"] is not None:
+            if row["title"]:
+                await websocket.send_json({"type": "title", "title": row["title"]})
+                inc(websocket_messages_sent_total, "title")
+            return
 
 
 @router.websocket("/api/ws/status/{transcription_id}")
@@ -553,7 +616,9 @@ async def websocket_status(websocket: WebSocket, transcription_id: str):
         while True:
             async with get_db() as db:
                 cursor = await db.execute(
-                    "SELECT status, error_message, error_code FROM transcriptions WHERE id = ?",
+                    "SELECT status, error_message, error_code, title, completed_at, "
+                    "result_json IS NOT NULL AND result_json != '[]' AS has_utterances "
+                    "FROM transcriptions WHERE id = ?",
                     (transcription_id,),
                 )
                 row = await cursor.fetchone()
@@ -570,14 +635,23 @@ async def websocket_status(websocket: WebSocket, transcription_id: str):
                 msg["error"] = row["error_message"]
             if status == "failed" and row["error_code"]:
                 msg["error_code"] = row["error_code"]
+            if status == "completed" and row["title"]:
+                msg["title"] = row["title"]
             await websocket.send_json(msg)
             inc(websocket_messages_sent_total, "status")
 
             if status in ("completed", "failed"):
                 close_reason = status
+                # _run_transcription asks the LLM for a title only after setting
+                # completed, and only with a provider (get_llm_provider() returns
+                # one exactly when LLM_PROVIDER is set) and utterances. Under the
+                # same condition, wait for it while the attempt runs (title NULL).
+                if (status == "completed" and row["title"] is None
+                        and settings.LLM_PROVIDER and row["has_utterances"]):
+                    await _send_title_when_ready(websocket, transcription_id, row["completed_at"])
                 break
 
-            await asyncio.sleep(5)
+            await asyncio.sleep(WS_POLL_SECONDS)
     except WebSocketDisconnect:
         close_reason = "client_disconnect"
     except Exception:
