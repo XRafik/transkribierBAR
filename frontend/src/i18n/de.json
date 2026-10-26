@@ -139,6 +139,7 @@
     "speakerRenamePlaceholder": "Neuer Name (leer lassen zum Beibehalten)",
     "speakerMergeHint": "Tipp: Geben Sie zwei Sprechenden denselben Namen, um sie zusammenzuführen.",
     "speakerMergedCount": "{{count}} zusammengeführt",
+    "speakerSaveFailed": "Speichern der Namen der Sprechenden fehlgeschlagen.",
     "noUtterances": "In dieser Aufnahme wurde keine Sprache erkannt.",
     "protocol": "Protokoll",
     "protocolLanguage": "Sprache des Protokolls",
