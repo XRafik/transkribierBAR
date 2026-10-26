@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getSystemAudioSupport } from '../../utils/platformDetect'
 import { useDevicePermission } from '../../utils/devicePermissions'
@@ -44,6 +44,9 @@ export function RecordingSources(props: RecordingSourcesProps) {
   const { t } = useTranslation()
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([])
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([])
+  const micId = useId()
+  const secondDeviceId = useId()
+  const cameraId = useId()
 
   const micPermission = useDevicePermission('mic')
   const cameraPermission = useDevicePermission('camera')
@@ -100,14 +103,15 @@ export function RecordingSources(props: RecordingSourcesProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per camera toggle, not on every device list change
   }, [useCamera, cameraDisabled])
 
-  // Auto-select first available second device when dual-device dropdown appears
+  // Keep the second device a valid candidate: select the first one when unset, stale, or equal to the microphone
   useEffect(() => {
     if (systemAudioSupport !== 'dual-device' || !captureSystemAudio) return
-    if (secondAudioDeviceId) return
+    // Device list not enumerated yet: nothing to validate the choice against.
+    if (audioDevices.length === 0) return
     const available = audioDevices.filter((d) => d.deviceId !== audioDeviceId)
-    if (available.length > 0) {
-      onSecondAudioDeviceChange(available[0].deviceId)
-    }
+    if (available.some((d) => d.deviceId === secondAudioDeviceId)) return
+    const next = available.length > 0 ? available[0].deviceId : ''
+    if (next !== secondAudioDeviceId) onSecondAudioDeviceChange(next)
   }, [captureSystemAudio, audioDevices, audioDeviceId, secondAudioDeviceId, onSecondAudioDeviceChange])
 
   const makeDeniedBanner = (sourceLabel: string, onRetry: () => void) => (
@@ -139,13 +143,14 @@ export function RecordingSources(props: RecordingSourcesProps) {
         deniedBanner={makeDeniedBanner(t('recorder.sourceMicrophone'), micPermission.refresh)}
       >
         <div data-help="record-mic-device" className="flex flex-col gap-1 min-w-0 sm:flex-row sm:items-center sm:gap-3">
-          <label className="text-xs text-gray-400 sm:min-w-24 sm:shrink-0">{t('recorder.selectMic')}</label>
+          <label htmlFor={micId} className="text-xs text-gray-400 sm:min-w-24 sm:shrink-0">{t('recorder.selectMic')}</label>
           {audioDevices.length === 1 ? (
-            <output className="flex-1 min-w-0 bg-gray-700 text-white rounded px-3 py-1.5 text-sm">
+            <output id={micId} className="flex-1 min-w-0 bg-gray-700 text-white rounded px-3 py-1.5 text-sm">
               {audioDevices[0].label || `Microphone ${audioDevices[0].deviceId.slice(0, 8)}`}
             </output>
           ) : (
             <select
+              id={micId}
               value={audioDeviceId}
               onChange={(e) => onAudioDeviceChange(e.target.value)}
               disabled={recording}
@@ -181,13 +186,14 @@ export function RecordingSources(props: RecordingSourcesProps) {
               const secondDeviceCandidates = audioDevices.filter((d) => d.deviceId !== audioDeviceId)
               return (
                 <div className="flex flex-col gap-1 min-w-0 sm:flex-row sm:items-center sm:gap-3">
-                  <label className="text-xs text-gray-400 sm:min-w-24 sm:shrink-0">{t('recorder.selectSecondDevice')}</label>
+                  <label htmlFor={secondDeviceId} className="text-xs text-gray-400 sm:min-w-24 sm:shrink-0">{t('recorder.selectSecondDevice')}</label>
                   {secondDeviceCandidates.length === 1 ? (
-                    <output className="flex-1 min-w-0 bg-gray-700 text-white rounded px-3 py-1.5 text-sm">
+                    <output id={secondDeviceId} className="flex-1 min-w-0 bg-gray-700 text-white rounded px-3 py-1.5 text-sm">
                       {secondDeviceCandidates[0].label || `Device ${secondDeviceCandidates[0].deviceId.slice(0, 8)}`}
                     </output>
                   ) : (
                     <select
+                      id={secondDeviceId}
                       value={secondAudioDeviceId}
                       onChange={(e) => onSecondAudioDeviceChange(e.target.value)}
                       disabled={recording}
@@ -224,13 +230,14 @@ export function RecordingSources(props: RecordingSourcesProps) {
           <p className="text-xs text-gray-400">{t('recorder.noCameraDetected')}</p>
         ) : (
           <div className="flex flex-col gap-1 min-w-0 sm:flex-row sm:items-center sm:gap-3">
-            <label className="text-xs text-gray-400 sm:min-w-24 sm:shrink-0">{t('recorder.selectCamera')}</label>
+            <label htmlFor={cameraId} className="text-xs text-gray-400 sm:min-w-24 sm:shrink-0">{t('recorder.selectCamera')}</label>
             {videoDevices.length === 1 ? (
-              <output className="flex-1 min-w-0 bg-gray-700 text-white rounded px-3 py-1.5 text-sm">
+              <output id={cameraId} className="flex-1 min-w-0 bg-gray-700 text-white rounded px-3 py-1.5 text-sm">
                 {videoDevices[0].label || `Camera ${videoDevices[0].deviceId.slice(0, 8)}`}
               </output>
             ) : (
               <select
+                id={cameraId}
                 value={videoDeviceId}
                 onChange={(e) => onVideoDeviceChange(e.target.value)}
                 disabled={recording}

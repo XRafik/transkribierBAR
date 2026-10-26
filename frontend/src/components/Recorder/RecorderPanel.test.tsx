@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import i18n from '../../i18n'
 import { useStore } from '../../store'
@@ -54,5 +54,28 @@ describe('RecorderPanel recording guard', () => {
     expect(useStore.getState().recordingActive).toBe(true)
     unmount()
     expect(useStore.getState().recordingActive).toBe(false)
+  })
+})
+
+describe('RecorderPanel start beep', () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage('en')
+    useStore.getState().reset()
+    recorder.current.state = 'idle'
+    recorder.current.blob = null
+    recorder.current.start = vi.fn()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('starts recording even when AudioContext.resume() never settles', () => {
+    vi.stubGlobal('AudioContext', class {
+      resume() { return new Promise<void>(() => {}) }
+    })
+    render(<RecorderPanel />)
+    fireEvent.click(screen.getByRole('button', { name: 'Start Recording' }))
+    expect(recorder.current.start).toHaveBeenCalledTimes(1)
   })
 })
