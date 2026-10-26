@@ -15,6 +15,7 @@ import { ChunkErrorBoundary } from './components/ChunkErrorBoundary'
 import { InviteLanding } from './components/InviteLanding'
 import { resolveModel } from './utils/models'
 import { leaveMessages } from './utils/leaveMessages'
+import { parseServerDate } from './utils/format'
 import { pipelineTargetToRun } from './utils/pipelineTarget'
 
 const RecorderPanel = lazy(() =>
@@ -62,13 +63,14 @@ function BackButton() {
   )
 }
 
-function DetailActions() {
+export function DetailActions() {
   const { t } = useTranslation()
   const transcriptionId = useStore((s) => s.transcriptionId)
   const history = useStore((s) => s.transcriptionHistory)
   const setHistory = useStore((s) => s.setTranscriptionHistory)
   const setCurrentView = useStore((s) => s.setCurrentView)
   const reset = useStore((s) => s.reset)
+  const archiveExpiryHours = useStore((s) => s.config?.archive_expiry_hours)
   const [now] = useState(() => Date.now())
 
   // Ensure history is loaded (may not be if user navigated directly to detail)
@@ -84,7 +86,7 @@ function DetailActions() {
   const handleArchive = async () => {
     const currentHistory = useStore.getState().transcriptionHistory
     setHistory(currentHistory.map((h) =>
-      h.id === item.id ? { ...h, archived: true, expires_at: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString() } : h
+      h.id === item.id ? { ...h, archived: true, expires_at: new Date(Date.now() + (archiveExpiryHours ?? 180 * 24) * 60 * 60 * 1000).toISOString() } : h
     ))
     try {
       const result = await api.archiveTranscription(item.id)
@@ -143,8 +145,8 @@ function DetailActions() {
         </svg>
         {t('transcription.delete')}
       </button>
-      <span className={`text-xs ${new Date(item.expires_at + 'Z').getTime() - now < 24 * 60 * 60 * 1000 ? 'text-red-400' : 'text-gray-500'}`}>
-        {t('transcription.expiresOn', { date: new Date(item.expires_at + 'Z').toLocaleDateString('de-DE') })}
+      <span className={`text-xs ${parseServerDate(item.expires_at).getTime() - now < 24 * 60 * 60 * 1000 ? 'text-red-400' : 'text-gray-500'}`}>
+        {t('transcription.expiresOn', { date: parseServerDate(item.expires_at).toLocaleDateString('de-DE') })}
       </span>
     </div>
   )
