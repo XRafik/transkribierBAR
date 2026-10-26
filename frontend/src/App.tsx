@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Header } from './components/Header'
 import { FileUpload, SettingsPanel, SubmittedSummaryCard, TranscribeActionBar } from './components/FileUpload'
 import type { SettingsPanelValues } from './components/FileUpload/SettingsPanel'
+import { bundleSettings } from './components/FileUpload/presetSettings'
 import type { SubmittedSummary } from './components/FileUpload'
 import { TranscriptionProgressCard } from './components/ProgressBar'
 import { TranscriptionList } from './components/TranscriptionList'
@@ -200,7 +201,8 @@ function MainApp() {
     const model = resolveModel(models, config.default_model)
     if (!model) return
     configModelApplied.current = true
-    setSettings((s) => ({ ...s, model }))
+    // A preset loaded before the configuration arrived (the default bundle's) has chosen the model
+    setSettings((s) => (s.selectedPresetId ? s : { ...s, model }))
   }, [config])
 
   const updateSettings = useCallback((patch: Partial<SettingsPanelValues>) => {
@@ -240,9 +242,13 @@ function MainApp() {
       setAnalysisPresets(ap)
       setRefinementPresets(rp)
       setBundles(bundles)
-      if (defaultBundle) setActiveBundleId(defaultBundle.id)
+      if (defaultBundle) {
+        setActiveBundleId(defaultBundle.id)
+        const patch = bundleSettings(defaultBundle, tp)
+        if (patch) updateSettings(patch)
+      }
     }).catch(console.error)
-  }, [setConfig, setTranscriptionPresets, setAnalysisPresets, setRefinementPresets, setBundles, setActiveBundleId])
+  }, [setConfig, setTranscriptionPresets, setAnalysisPresets, setRefinementPresets, setBundles, setActiveBundleId, updateSettings])
 
   // Track whether current navigation was triggered by browser back/forward
   const isPopStateNav = useRef(false)

@@ -20,7 +20,7 @@ If the upload is still running, the button reads **Transcribe when ready**; the 
 
 ## Using bundles
 
-A bundle links presets for transcription, refinement, analysis and translation. If you have created bundles, pick one under **Presets** in the **Bundles** field. If a bundle is marked as the default, it is already preselected when you open the page. That does not copy its transcription preset into the settings, though. This only happens when you choose the bundle yourself in the **Bundles** field, even if it is already shown. To do so, first select **Select a bundle...** and then the bundle.
+A bundle links presets for transcription, refinement, analysis and translation. If you have created bundles, pick one under **Presets** in the **Bundles** field. If a bundle is marked as the default, the app preselects it when it opens and applies its transcription preset to the settings, just as if you had chosen the bundle yourself. If you mark a bundle as the default while the app is open, the **Bundles** field shows it, but its transcription preset is only applied the next time the app opens. To apply it right away, first select **Select a bundle...** and then the bundle.
 
 If the bundle includes refinement, analysis or translation, the button reads **Run pipeline**. Your browser starts those steps automatically after the transcription. Stay on the page until they have finished. You create bundles on the **Presets** page.
 
