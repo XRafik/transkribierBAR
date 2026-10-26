@@ -290,3 +290,57 @@ async def test_translate_with_force_while_a_translation_is_in_progress_returns_4
 
     assert resp.status_code == 429
     llm.assert_not_called()
+
+
+async def _stored_translation(txn_id):
+    from app.database import get_db
+    async with get_db() as db:
+        row = await (await db.execute(
+            "SELECT translated_utterances_json, translation_language, "
+            "translation_source, translation_source_hash FROM transcriptions WHERE id = ?",
+            (txn_id,),
+        )).fetchone()
+    return tuple(row)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failure", ["provider_raises", "count_mismatch"])
+async def test_failed_retranslation_keeps_the_stored_translation(failure):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        txn_id, _ = await _setup(client, txn_id=f"test-translate-keep-{failure}")
+        await _translate_then_edit_source(client, txn_id)
+        before = await _stored_translation(txn_id)
+        before_get = (await client.get(f"/api/translate/{txn_id}")).json()
+
+        if failure == "provider_raises":
+            llm = AsyncMock(side_effect=RuntimeError("LLM down"))
+        else:
+            llm = AsyncMock(return_value=_translated(["only one"]))
+        with patch("app.routers.translation.get_llm_provider", return_value=AsyncMock()), \
+             patch("app.routers.translation._call_llm_translation", llm):
+            resp = await client.post(
+                f"/api/translate/{txn_id}",
+                json={"target_language": "fr", "source": "original", "force": True},
+            )
+        after_get = (await client.get(f"/api/translate/{txn_id}")).json()
+
+    assert resp.status_code == 500
+    assert await _stored_translation(txn_id) == before
+    assert before[1] == "en"
+    assert after_get == before_get
+    assert after_get["stale"] is True
+
+
+@pytest.mark.asyncio
+async def test_failed_first_translation_leaves_no_translation():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        txn_id, _ = await _setup(client, txn_id="test-translate-fail-fresh")
+        llm = AsyncMock(side_effect=RuntimeError("LLM down"))
+        with patch("app.routers.translation.get_llm_provider", return_value=AsyncMock()), \
+             patch("app.routers.translation._call_llm_translation", llm):
+            resp = await client.post(f"/api/translate/{txn_id}", json={"target_language": "en"})
+
+    assert resp.status_code == 500
+    assert await _stored_translation(txn_id) == (None, None, None, None)
