@@ -277,7 +277,7 @@ export function TranscriptionList() {
                 item.status === 'failed' ? 'bg-red-900 text-red-300' :
                 'bg-yellow-900 text-yellow-300'
               }`}>
-                {item.status}
+                {t(`transcription.status.${item.status}`, item.status)}
               </span>
               <span className="text-gray-500 text-xs">
                 {new Date(item.created_at + 'Z').toLocaleDateString('de-DE')}

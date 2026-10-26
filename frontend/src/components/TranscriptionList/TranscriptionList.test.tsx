@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useStore } from '../../store'
 import { api } from '../../api/client'
-import '../../i18n'
+import i18n from '../../i18n'
 import { TranscriptionList } from './TranscriptionList'
 import type { TranscriptionListItem } from '../../api/types'
 
@@ -62,5 +62,42 @@ describe('TranscriptionList opening a transcription', () => {
     useStore.setState({ unsavedEdits: true, currentView: 'archive' })
     await openItem('p2.mp3', [item('p2', 'processing')])
     expect(useStore.getState().leaveReason()).toBeNull()
+  })
+})
+
+describe('TranscriptionList status badge', () => {
+  beforeEach(() => {
+    cleanup()
+    vi.clearAllMocks()
+    useStore.getState().reset()
+  })
+
+  afterEach(async () => {
+    await i18n.changeLanguage('en')
+  })
+
+  it('shows German status labels', async () => {
+    await i18n.changeLanguage('de')
+    vi.mocked(api.listTranscriptions).mockResolvedValue([
+      item('a', 'completed'),
+      item('b', 'failed'),
+      item('c', 'pending'),
+      item('d', 'processing'),
+      item('e', 'weird'),
+    ])
+    render(<TranscriptionList />)
+    await screen.findByText('a.mp3')
+    expect(screen.getByText('Abgeschlossen')).toBeInTheDocument()
+    expect(screen.getByText('Fehlgeschlagen')).toBeInTheDocument()
+    expect(screen.getByText('Wartend')).toBeInTheDocument()
+    expect(screen.getByText('In Bearbeitung')).toBeInTheDocument()
+    expect(screen.getByText('weird')).toBeInTheDocument()
+  })
+
+  it('shows English status labels', async () => {
+    vi.mocked(api.listTranscriptions).mockResolvedValue([item('a', 'completed')])
+    render(<TranscriptionList />)
+    await screen.findByText('a.mp3')
+    expect(screen.getByText('Completed')).toBeInTheDocument()
   })
 })
