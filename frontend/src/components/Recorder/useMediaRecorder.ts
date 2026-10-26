@@ -130,6 +130,9 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}): UseMedi
 
   const start = useCallback(async () => {
     if (recorderRef.current && recorderRef.current.state !== 'inactive') return
+    // A recorder that is still active returned above, so only leftovers of a
+    // failed earlier attempt can be open here; stop them instead of overwriting.
+    stopAllTracks()
     discardingRef.current = false
     setError(null)
     setBlob(null)
@@ -359,6 +362,8 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}): UseMedi
       } else {
         setError('micRequired')
       }
+      // Release anything opened before the failure (e.g. MediaRecorder threw).
+      stopAllTracks()
     }
   }, [options.audioDeviceId, options.videoDeviceId, options.useCamera, options.captureSystemAudio, options.secondAudioDeviceId, options.useMicrophone, resetTimer, startTimer, pauseTimer, stopAllTracks])
 
