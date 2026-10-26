@@ -47,6 +47,7 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}): UseMedi
 
   const recorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const cameraStreamRef = useRef<MediaStream | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTimeRef = useRef(0)
@@ -69,6 +70,8 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}): UseMedi
     }
     streamRef.current?.getTracks().forEach((t) => t.stop())
     streamRef.current = null
+    cameraStreamRef.current?.getTracks().forEach((t) => t.stop())
+    cameraStreamRef.current = null
     displayStreamRef.current?.getTracks().forEach((t) => t.stop())
     displayStreamRef.current = null
     secondStreamRef.current?.getTracks().forEach((t) => t.stop())
@@ -89,6 +92,7 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}): UseMedi
       }
       if (timerRef.current) clearInterval(timerRef.current)
       streamRef.current?.getTracks().forEach((t) => t.stop())
+      cameraStreamRef.current?.getTracks().forEach((t) => t.stop())
       if (displayEndedHandlerRef.current) {
         const displayTrack = displayStreamRef.current?.getAudioTracks()[0]
         const secondTrack = secondStreamRef.current?.getAudioTracks()[0]
@@ -215,6 +219,7 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}): UseMedi
             : true
           try {
             cameraStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraint })
+            cameraStreamRef.current = cameraStream
           } catch (err) {
             // Camera isn't usable (denied, missing, or otherwise). Since the mic
             // already opened successfully, continue with audio-only recording
