@@ -253,6 +253,7 @@
     "newAnalysis": "+ Neue Analyse",
     "previousAnalyses": "Vorherige Analysen",
     "confirmDeleteAnalysis": "Diese Analyse löschen? Dies kann nicht rückgängig gemacht werden.",
+    "deleteFailed": "Die Analyse konnte nicht gelöscht werden.",
     "collapseForm": "Abbrechen"
   },
   "presets": {

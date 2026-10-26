@@ -253,6 +253,7 @@
     "newAnalysis": "+ New Analysis",
     "previousAnalyses": "Previous analyses",
     "confirmDeleteAnalysis": "Delete this analysis? This cannot be undone.",
+    "deleteFailed": "Deleting the analysis failed.",
     "collapseForm": "Cancel"
   },
   "presets": {
