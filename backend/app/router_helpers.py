@@ -1,6 +1,16 @@
 from fastapi import HTTPException
 
+from app.config import settings
 from app.database import get_db
+
+
+def resolve_whisper_model(model: str | None) -> str:
+    """The requested model, or the instance default; 422 if the instance does not offer it."""
+    if not model:
+        return settings.DEFAULT_WHISPER_MODEL
+    if model not in settings.WHISPER_MODELS:
+        raise HTTPException(status_code=422, detail=f"Model '{model}' is not available on this instance")
+    return model
 
 
 async def ensure_transcription_owned(db, transcription_id: str, user_id: str) -> None:
@@ -29,6 +39,21 @@ async def reset_translation_state(transcription_id: str, user_id: str) -> None:
             "translation_source_hash = NULL "
             "WHERE id = ? AND user_id = ?",
             (transcription_id, user_id),
+        )
+        await db.commit()
+
+
+async def restore_translation_state(
+    transcription_id: str, user_id: str, previous: tuple[str, str | None, str | None, str | None]
+) -> None:
+    """Put back the (json, language, source, source_hash) stored before a failed attempt."""
+    async with get_db() as db:
+        await db.execute(
+            "UPDATE transcriptions SET translated_utterances_json = ?, "
+            "translation_language = ?, translation_source = ?, "
+            "translation_source_hash = ? "
+            "WHERE id = ? AND user_id = ?",
+            (*previous, transcription_id, user_id),
         )
         await db.commit()
 

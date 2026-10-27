@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '../../api/client'
 import type { ApiToken } from '../../api/types'
+import { formatDateTime } from '../../utils/format'
+import { tokenErrorMessage } from '../../utils/tokenError'
 import { CreateTokenModal } from './CreateTokenModal'
 
 type TokenStatus = 'active' | 'expired' | 'revoked'
@@ -16,9 +18,10 @@ function getTokenStatus(token: ApiToken): TokenStatus {
 }
 
 export function ApiTokensSection() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [tokens, setTokens] = useState<ApiToken[]>([])
-  const [error, setError] = useState<string | null>(null)
+  // The raw error, translated at render time so it follows a language switch.
+  const [error, setError] = useState<{ e: unknown; action: 'list' | 'revoke' } | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [revoking, setRevoking] = useState<string | null>(null)
 
@@ -28,7 +31,7 @@ export function ApiTokensSection() {
       const result = await api.listApiTokens()
       setTokens(result)
     } catch (e) {
-      setError((e as Error).message)
+      setError({ e, action: 'list' })
     }
   }, [])
 
@@ -43,7 +46,7 @@ export function ApiTokensSection() {
       await api.revokeApiToken(id)
       await fetchTokens()
     } catch (e) {
-      setError((e as Error).message)
+      setError({ e, action: 'revoke' })
     } finally {
       setRevoking(null)
     }
@@ -69,7 +72,7 @@ export function ApiTokensSection() {
       </div>
 
       {error && (
-        <p className="text-sm text-red-400">{error}</p>
+        <p role="alert" className="text-sm text-red-400">{tokenErrorMessage(error.e, t, error.action)}</p>
       )}
 
       {tokens.length === 0 && !error && (
@@ -99,10 +102,10 @@ export function ApiTokensSection() {
                       {t(`settings.apiTokens.${statusKey}`)}
                     </span>
                     {token.expires_at && (
-                      <span>{t('settings.apiTokens.expiresOnTmpl', { date: token.expires_at })}</span>
+                      <span>{t('settings.apiTokens.expiresOnTmpl', { date: formatDateTime(token.expires_at, i18n.language) })}</span>
                     )}
                     {token.last_used_at && (
-                      <span>{t('settings.apiTokens.lastUsedTmpl', { date: token.last_used_at })}</span>
+                      <span>{t('settings.apiTokens.lastUsedTmpl', { date: formatDateTime(token.last_used_at, i18n.language) })}</span>
                     )}
                   </div>
                 </div>

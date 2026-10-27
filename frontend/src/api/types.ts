@@ -23,6 +23,7 @@ export interface TranscriptionStatus {
   status: 'pending' | 'processing' | 'completed' | 'failed'
   progress: number | null
   error: string | null
+  error_code: string | null
 }
 
 export interface Utterance {

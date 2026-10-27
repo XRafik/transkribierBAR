@@ -27,7 +27,7 @@ class FileInfo(BaseModel):
 class TranscriptionSettings(BaseModel):
     file_id: str
     language: str | None = None
-    model: str = "base"
+    model: str | None = None
     min_speakers: int = 0
     max_speakers: int = 0
     initial_prompt: str | None = None
@@ -39,6 +39,9 @@ class TranscriptionStatus(BaseModel):
     status: str
     progress: float | None = None
     error: str | None = None
+    # Stable reason for a failure, next to the English `error` that API clients may
+    # rely on: server_restarted, timeout, asr_unreachable, asr_failed or unknown.
+    error_code: str | None = None
 
 
 class Utterance(BaseModel):
@@ -222,6 +225,9 @@ class AnalysisRequest(BaseModel):
 class TranslationRequest(BaseModel):
     target_language: str
     source: Literal["original", "refined"] | None = None
+    # Translate again even when a translation for this language and source is
+    # stored, so an out-of-date one can be replaced.
+    force: bool = False
 
 
 class TranslationResult(BaseModel):
@@ -284,7 +290,7 @@ class InvitationAcceptResponse(BaseModel):
 class TranscriptionPresetCreate(BaseModel):
     name: str
     language: str | None = None
-    model: str = "base"
+    model: str | None = None
     min_speakers: int = 0
     max_speakers: int = 0
     initial_prompt: str | None = None
@@ -293,6 +299,7 @@ class TranscriptionPresetCreate(BaseModel):
 
 class TranscriptionPresetResponse(TranscriptionPresetCreate):
     id: str
+    model: str
     created_at: str | None = None
     updated_at: str | None = None
 

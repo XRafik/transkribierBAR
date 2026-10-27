@@ -8,7 +8,7 @@ Ein Token gehört zu Ihrem Konto. Ein Skript, das ihn verwendet, sieht und ände
 
 ## Token erstellen
 
-Klicken Sie in der Kopfzeile auf **Einstellungen**. Klicken Sie im Bereich **API-Tokens** auf **Token erstellen**. Geben Sie einen **Namen** ein, der Ihnen sagt, wo Sie den Token verwenden, zum Beispiel den Namen des Skripts. Wählen Sie unter **Läuft ab** eine der Optionen **30 Tage**, **90 Tage** oder **365 Tage**. Jeder Token läuft ab; die Standard-Gültigkeit beträgt {{api_token_expiry_days}} Tage. Klicken Sie auf **Erstellen**.
+Klicken Sie in der Kopfzeile auf **Einstellungen**. Klicken Sie im Bereich **API-Tokens** auf **Token erstellen**. Geben Sie einen **Namen** ein, der Ihnen sagt, wo Sie den Token verwenden, zum Beispiel den Namen des Skripts. Wählen Sie unter **Läuft ab**, wie lange der Token gültig bleibt. Die Liste bietet **30 Tage**, **90 Tage** und **365 Tage** und immer auch die Standard-Gültigkeit von {{api_token_expiry_days}} Tagen, die vorausgewählt ist. Jeder Token läuft ab. Klicken Sie auf **Erstellen**.
 
 Der Name darf bis zu 64 Zeichen lang sein. Unter Ihren aktiven Tokens darf jeder Name nur einmal vorkommen. Die Zahl der aktiven Tokens pro Person ist begrenzt. Haben Sie sie erreicht, wird ein weiterer Token mit einer Fehlermeldung im Dialog abgelehnt. Widerrufen Sie dann zuerst einen Token, den Sie nicht mehr brauchen.
 
@@ -76,7 +76,7 @@ Die Antwort enthält die `id` der Transkription (`TRANSCRIPTION_ID`) und den Sta
 | `initial_prompt` | Optionaler Kontext für die Transkription. |
 | `hotwords` | Optionale Fachbegriffe, durch Kommas getrennt. |
 
-> **Das Modell immer mitsenden.** Diese Installation bietet nur das Modell {{default_model}} an. Der Server prüft das Feld `model` nicht. Lassen Sie es weg, gibt er das Modell `base` an die Spracherkennung weiter, das diese Installation nicht anbietet. Senden Sie deshalb immer `"model": "{{default_model}}"`.
+> **Das Modell.** Diese Installation bietet nur das Modell {{default_model}} an. Lassen Sie `model` weg, wird das Standardmodell {{default_model}} dieser Installation verwendet. Ein Modell, das diese Installation nicht anbietet, wird mit Status 422 abgelehnt; die Meldung nennt das abgelehnte Modell.
 
 **3. Auf das Ergebnis warten.** Fragen Sie den Status ab, bis er `completed` oder `failed` ist:
 
@@ -84,7 +84,9 @@ Die Antwort enthält die `id` der Transkription (`TRANSCRIPTION_ID`) und den Sta
 curl -H "Authorization: Bearer tw_…" https://transcription.uni-osnabrueck.de/api/status/TRANSCRIPTION_ID
 ```
 
-Der Status ist `pending`, `processing`, `completed` oder `failed`. Bei `failed` nennt das Feld `error` den Grund. Statt die Abfrage zu wiederholen, können Sie den WebSocket aus dem Abschnitt „Authentifizierung“ abhören. Er sendet alle 5 Sekunden eine Nachricht wie `{"type": "status", "status": "processing"}` und schließt sich nach `completed` oder `failed`. Bei einem ungültigen Token schließt er mit dem Code 4001. Gibt es die Transkription nicht oder gehört sie Ihnen nicht, schließt er mit dem Code 4003.
+Der Status ist `pending`, `processing`, `completed` oder `failed`. Bei `failed` nennt das Feld `error` den Grund, und `error_code` bezeichnet ihn mit einem festen Code: `server_restarted` (der Server wurde während der Transkription neu gestartet), `timeout` (die Spracherkennung ist nicht innerhalb des Zeitlimits fertig geworden), `asr_unreachable` (die Anfrage an die Spracherkennung ist fehlgeschlagen), `asr_failed` (die Spracherkennung hat einen Fehler gemeldet) oder `unknown` (ein anderer Grund, den nur `error` beschreibt). Ist kein Code gespeichert, ist `error_code` `null`.
+
+Statt die Abfrage zu wiederholen, können Sie den WebSocket aus dem Abschnitt „Authentifizierung“ abhören. Er sendet alle 5 Sekunden eine Nachricht wie `{"type": "status", "status": "processing"}` und schließt sich nach `failed`. Hat die Transkription schon einen Titel, enthält die Nachricht mit `completed` ihn im Feld `title`, und der WebSocket schließt sich. Das Sprachmodell schreibt den Titel allerdings erst nach der Transkription. Solange es noch am Titel arbeitet, bleibt der WebSocket nach `completed` offen und prüft alle 5 Sekunden. Sobald der Versuch beendet ist, sendet er `{"type": "title", "title": "…"}`, falls dabei ein Titel entstanden ist, und schließt sich. Spätestens wenn das Zeitlimit des Sprachmodells seit dem Abschluss der Transkription verstrichen ist, schließt er sich. Ohne Sprachmodell und bei einer Transkription ohne Text schließt er sich direkt nach `completed`. Bei einem ungültigen Token schließt er mit dem Code 4001. Gibt es die Transkription nicht oder gehört sie Ihnen nicht, schließt er mit dem Code 4003.
 
 **4. Ergebnis abrufen.** Solange die Transkription nicht fertig ist, beantwortet der Server diesen Aufruf mit dem Status 400:
 

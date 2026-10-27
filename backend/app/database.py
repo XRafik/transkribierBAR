@@ -168,6 +168,7 @@ MIGRATIONS = [
     ("translation_source_hash", "transcriptions", "translation_source_hash TEXT"),
     ("source", "analyses", "source TEXT"),
     ("source_hash", "analyses", "source_hash TEXT"),
+    ("error_code", "transcriptions", "error_code TEXT"),
 ]
 
 
@@ -199,7 +200,9 @@ async def init_db(db_path: str) -> None:
                     language TEXT,
                     llm_provider TEXT,
                     llm_model TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    source TEXT,
+                    source_hash TEXT
                 )
             """)
             # Clean up orphaned in-progress placeholders

@@ -51,6 +51,7 @@ export function SubtitleEditor() {
   const activeRef = useRef<HTMLTableRowElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [searchScope, setSearchScope] = useState<SearchScope>('both')
@@ -59,7 +60,7 @@ export function SubtitleEditor() {
   const [retryingChunks, setRetryingChunks] = useState(false)
   const [retryError, setRetryError] = useState<'stale' | 'generic' | null>(null)
   const [refineError, setRefineError] = useState(false)
-  const [translateError, setTranslateError] = useState(false)
+  const [translateError, setTranslateError] = useState<string | null>(null)
   const [refining, setRefining] = useState(false)
   const [selectedRefinementPresetId, setSelectedRefinementPresetId] = useState<string | null>(null)
   const [speakerPanelOpen, setSpeakerPanelOpen] = useState(false)
@@ -97,6 +98,12 @@ export function SubtitleEditor() {
       setTranslateSource(refinedUtterances ? 'refined' : 'original')
     }
   }, [showTranslateModal, refinedUtterances])
+
+  // Renewing a stored translation starts from its language
+  const openTranslateDialog = () => {
+    if (translationLanguage) setTranslateLanguage(translationLanguage)
+    setShowTranslateModal(true)
+  }
   const [summaryCollapsed, setSummaryCollapsed] = useState(false)
   const [editingCell, setEditingCell] = useState<{ index: number; field: string } | null>(null)
   const setSeekTo = useStore((s) => s.setSeekTo)
@@ -385,18 +392,20 @@ export function SubtitleEditor() {
 
   const handleRestore = useCallback(async () => {
     if (!transcriptionId || !confirm(t('editor.confirmRestore'))) return
+    setSaveError(null)
     try {
       const original = await api.getTranscription(transcriptionId)
       setResult(original)
       setDirty(false)
     } catch (e) {
-      console.error('Restore failed:', e)
+      setSaveError(e instanceof ApiError && e.message ? e.message : t('editor.restoreFailed'))
     }
   }, [transcriptionId, setResult, setDirty, t])
 
   const handleSave = async () => {
     if (!transcriptionId || !result) return
     setSaving(true)
+    setSaveError(null)
     try {
       await api.saveTranscription(transcriptionId, result.utterances)
       setDirty(false)
@@ -406,7 +415,7 @@ export function SubtitleEditor() {
         api.getRefinement(transcriptionId).then((r) => setRefinementStale(r.stale)).catch(() => {})
       }
     } catch (e) {
-      console.error('Save failed:', e)
+      setSaveError(e instanceof ApiError && e.message ? e.message : t('editor.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -457,15 +466,24 @@ export function SubtitleEditor() {
     }
   }
 
+  // The server hands back a stored translation for the same language and source
+  // unchanged (a request without a source matches any), so replacing an
+  // out-of-date one has to be asked for explicitly.
+  const replacesStaleTranslation = !!translatedUtterances
+    && (translationStale || !translationSourceAvailable)
+    && translateLanguage === translationLanguage
+    && (!refinedUtterances || translateSource === translationSource)
+
   const handleTranslate = async () => {
     if (!transcriptionId) return
     setTranslating(true)
-    setTranslateError(false)
+    setTranslateError(null)
     try {
       const translationResult = await api.translateTranscription(
         transcriptionId,
         translateLanguage,
         refinedUtterances ? translateSource : undefined,
+        replacesStaleTranslation,
       )
       setTranslatedUtterances(translationResult.utterances)
       setTranslationLanguage(translationResult.language)
@@ -476,8 +494,8 @@ export function SubtitleEditor() {
       })
       setActiveView('translated')
       setShowTranslateModal(false)
-    } catch {
-      setTranslateError(true)
+    } catch (e) {
+      setTranslateError(e instanceof ApiError && e.message ? e.message : t('editor.translationFailed'))
     } finally {
       setTranslating(false)
     }
@@ -575,6 +593,9 @@ export function SubtitleEditor() {
           </button>
           {dirty && (
             <>
+              {saveError && (
+                <span role="alert" className="text-xs text-red-400">{saveError}</span>
+              )}
               <button
                 onClick={handleRestore}
                 className="px-3 py-1 text-gray-400 text-xs rounded border border-gray-600 hover:text-white hover:border-gray-400"
@@ -614,7 +635,7 @@ export function SubtitleEditor() {
         {llmAvailable && !translatedUtterances && (
           <button
             data-help="translate-open"
-            onClick={() => setShowTranslateModal(true)}
+            onClick={openTranslateDialog}
             className="flex items-center gap-1.5 px-3 py-1 text-xs bg-indigo-700/40 text-indigo-300 border border-indigo-700/50 rounded hover:bg-indigo-700/60"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -667,7 +688,7 @@ export function SubtitleEditor() {
               )}
               {translatedUtterances && (translationStale || !translationSourceAvailable) && (
                 <button
-                  onClick={() => setShowTranslateModal(true)}
+                  onClick={openTranslateDialog}
                   className="flex items-center gap-1 px-2 py-1 text-xs text-amber-400 border border-amber-700/40 rounded hover:bg-amber-700/10"
                   title={!translationSourceAvailable ? t('editor.sourceMissing') : t('editor.sourceStale')}
                 >
@@ -924,12 +945,15 @@ export function SubtitleEditor() {
                 {t('editor.translationWarningLong', { count: baseUtterances.length })}
               </p>
             )}
+            {replacesStaleTranslation && (
+              <p className="text-xs text-amber-400 mt-2">{t('editor.translationReplacesStale')}</p>
+            )}
             {translateError && (
-              <p role="alert" className="text-xs text-red-400 mt-2">{t('editor.translationFailed')}</p>
+              <p role="alert" className="text-xs text-red-400 mt-2">{translateError}</p>
             )}
             <div className="flex justify-end gap-2 mt-4">
               <button
-                onClick={() => { setShowTranslateModal(false); setTranslateError(false) }}
+                onClick={() => { setShowTranslateModal(false); setTranslateError(null) }}
                 disabled={translating}
                 className="px-3 py-1.5 text-xs text-gray-400 border border-gray-600 rounded hover:border-gray-500 hover:text-gray-200 disabled:opacity-50"
               >

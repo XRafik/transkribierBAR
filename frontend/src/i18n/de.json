@@ -39,10 +39,10 @@
       "title": "API-Tokens",
       "createButton": "Token erstellen",
       "nameLabel": "Name",
+      "namePlaceholder": "z. B. mein-skript",
       "expiresLabel": "Läuft ab",
-      "expiry30": "30 Tage",
-      "expiry90": "90 Tage",
-      "expiry365": "365 Tage",
+      "expiryDays_one": "{{count}} Tag",
+      "expiryDays_other": "{{count}} Tage",
       "createCta": "Erstellen",
       "cancel": "Abbrechen",
       "revoke": "Widerrufen",
@@ -59,7 +59,15 @@
       "creating": "Wird erstellt…",
       "expiresOnTmpl": "läuft ab am {{date}}",
       "lastUsedTmpl": "zuletzt verwendet {{date}}",
-      "empty": "Noch keine API-Tokens. Erstellen Sie einen, um zu beginnen."
+      "empty": "Noch keine API-Tokens. Erstellen Sie einen, um zu beginnen.",
+      "errors": {
+        "duplicateName": "Ein aktiver Token mit diesem Namen existiert bereits.",
+        "limitReached": "Die maximale Anzahl aktiver Tokens ist erreicht.",
+        "notFound": "Dieser Token existiert nicht mehr.",
+        "createFailed": "Der Token konnte nicht erstellt werden.",
+        "revokeFailed": "Der Token konnte nicht widerrufen werden.",
+        "listFailed": "Die Tokens konnten nicht geladen werden."
+      }
     }
   },
   "transcription": {
@@ -70,6 +78,12 @@
     "success": "Transkription erfolgreich!",
     "failed": "Transkription fehlgeschlagen",
     "failedDetail": "Fehlermeldung: {{message}}",
+    "errors": {
+      "server_restarted": "Der Server wurde neu gestartet, während diese Transkription lief.",
+      "timeout": "Die Spracherkennung hat diese Transkription nicht innerhalb des Zeitlimits abgeschlossen.",
+      "asr_unreachable": "Die Anfrage an die Spracherkennung ist fehlgeschlagen.",
+      "asr_failed": "Die Spracherkennung hat für diese Transkription einen Fehler gemeldet."
+    },
     "delete": "Transkription löschen",
     "history": "Meine Transkriptionen",
     "doubleClickToRename": "Doppelklick zum Umbenennen",
@@ -77,6 +91,12 @@
     "archived": "Archiviert",
     "expiresOn": "Läuft ab: {{date}}",
     "confirmDelete": "Sind Sie sicher, dass Sie diese Transkription löschen möchten? Dies kann nicht rückgängig gemacht werden.",
+    "status": {
+      "pending": "Wartend",
+      "processing": "In Bearbeitung",
+      "completed": "Abgeschlossen",
+      "failed": "Fehlgeschlagen"
+    },
     "statusPending": "Wartet in der Warteschlange — bitte warten...",
     "statusProcessing": "Audio wird transkribiert — bitte warten, dies kann einige Minuten dauern.",
     "statusUploading": "Datei wird hochgeladen — bitte warten...",
@@ -85,7 +105,8 @@
     "summary": {
       "noLanguage": "automatisch",
       "speakersOff": "keine Sprechenden",
-      "speakersOne": "{{count}} Person",
+      "speakers_one": "{{count}} Person",
+      "speakers_other": "{{count}} Personen",
       "speakersRange": "{{min}}–{{max}} Personen",
       "viaBundle": "über Paket \"{{name}}\"",
       "line": "{{size}} · {{model}} · {{language}} · {{speakers}}"
@@ -110,6 +131,8 @@
     "saveChanges": "Änderungen speichern",
     "restoreOriginal": "Original wiederherstellen",
     "confirmRestore": "Alle ungespeicherten Änderungen verwerfen und die ursprüngliche Transkription wiederherstellen?",
+    "saveFailed": "Speichern fehlgeschlagen.",
+    "restoreFailed": "Wiederherstellen fehlgeschlagen.",
     "confirmTimestampCascade": "Diese Änderung passt die Zeitstempel von {{count}} benachbarten Zeile(n) an. Fortfahren?",
     "apply": "Anwenden",
     "generatingSummary": "Zusammenfassung wird erstellt...",
@@ -130,6 +153,7 @@
     "speakerRenamePlaceholder": "Neuer Name (leer lassen zum Beibehalten)",
     "speakerMergeHint": "Tipp: Geben Sie zwei Sprechenden denselben Namen, um sie zusammenzuführen.",
     "speakerMergedCount": "{{count}} zusammengeführt",
+    "speakerSaveFailed": "Speichern der Namen der Sprechenden fehlgeschlagen.",
     "noUtterances": "In dieser Aufnahme wurde keine Sprache erkannt.",
     "protocol": "Protokoll",
     "protocolLanguage": "Sprache des Protokolls",
@@ -211,6 +235,7 @@
     "fromRefined": "aus Verfeinerung",
     "sourceStale": "Quelle hat neueren Inhalt",
     "sourceMissing": "Quelle nicht mehr verfügbar",
+    "translationReplacesStale": "Die veraltete Übersetzung wird ersetzt.",
     "refreshFromSource": "Mit gleicher Quelle erneut ausführen",
     "hotkeyLegend": "Tastenkürzel",
     "hotkeyTab": "Nächste Untertitel",
@@ -219,6 +244,8 @@
     "analysis": "Analyse"
   },
   "analysis": {
+    "removeChapter": "Kapitel entfernen",
+    "removeItem": "Eintrag entfernen",
     "selectTemplate": "Vorlage auswählen",
     "customPrompt": "Eigene Anweisung",
     "templateSummary": "Zusammenfassung mit Kapiteln",
@@ -244,6 +271,8 @@
     "newAnalysis": "+ Neue Analyse",
     "previousAnalyses": "Vorherige Analysen",
     "confirmDeleteAnalysis": "Diese Analyse löschen? Dies kann nicht rückgängig gemacht werden.",
+    "confirmDeleteItem": "Diesen Eintrag aus der Analyse entfernen?",
+    "deleteFailed": "Die Analyse konnte nicht gelöscht werden.",
     "collapseForm": "Abbrechen"
   },
   "presets": {

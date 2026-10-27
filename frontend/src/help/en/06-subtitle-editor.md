@@ -22,7 +22,7 @@ Your changes only exist in your browser until you save them (see "Saving").
 
 ## Editing times
 
-Use the pencil icon next to **Start** or **End** to change a time. The field shows it as `HH:MM:SS`. Always enter all three parts, for example `00:01:30`. Press Enter or click outside the field to apply the time. The field shows whole seconds. When you apply it, fractions of a second are dropped, even if you did not change the time.
+Use the pencil icon next to **Start** or **End** to change a time. The table shows whole seconds, the field shows the time with milliseconds, for example `00:01:30.500`. You can also enter only minutes and seconds (`01:30`) or only seconds (`90`). A fraction of a second follows a point or a comma, for example `12,5`. Press Enter or click outside the field to apply the time. If the time is unchanged or not a valid time, the row stays as it was.
 
 If the new time overlaps neighboring rows, the editor adjusts them: a new start shortens the end of the previous rows, a new end moves the start of the following rows. Before that, a prompt tells you how many rows are affected. If you cancel it, nothing changes. If the new start is after the end of the row, the end moves along. Likewise the start moves back if the new end is before it.
 

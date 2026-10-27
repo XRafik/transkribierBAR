@@ -20,7 +20,7 @@ Läuft der Upload noch, heißt die Schaltfläche **Transkribieren wenn bereit**;
 
 ## Pakete verwenden
 
-Ein Paket verbindet Voreinstellungen für Transkription, Verfeinerung, Analyse und Übersetzung. Haben Sie Pakete angelegt, wählen Sie unter **Voreinstellungen** im Feld **Pakete** eines aus. Ist ein Paket als Standard markiert, ist es beim Öffnen schon vorgewählt. Seine Transkriptions-Voreinstellung wird dadurch aber nicht in die Einstellungen übernommen. Das geschieht erst, wenn Sie das Paket im Feld **Pakete** selbst auswählen, auch wenn es schon angezeigt wird. Wählen Sie dazu zuerst **Paket wählen...** und danach das Paket aus.
+Ein Paket verbindet Voreinstellungen für Transkription, Verfeinerung, Analyse und Übersetzung. Haben Sie Pakete angelegt, wählen Sie unter **Voreinstellungen** im Feld **Pakete** eines aus. Ist ein Paket als Standard markiert, wählt die Anwendung es beim Öffnen vor und übernimmt die Einstellungen seiner Transkriptions-Voreinstellung, so als hätten Sie das Paket selbst ausgewählt. Markieren Sie ein Paket als Standard, während die Anwendung offen ist, zeigt das Feld **Pakete** es an, seine Transkriptions-Voreinstellung wird aber erst beim nächsten Öffnen übernommen. Um sie sofort zu übernehmen, wählen Sie zuerst **Paket wählen...** und danach das Paket aus.
 
 Enthält das Paket Verfeinerung, Analyse oder Übersetzung, heißt die Schaltfläche **Pipeline starten**. Diese Schritte startet Ihr Browser nach der Transkription automatisch. Bleiben Sie auf der Seite, bis sie fertig sind. Pakete legen Sie auf der Seite **Voreinstellungen** an.
 

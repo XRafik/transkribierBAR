@@ -7,7 +7,7 @@
  * Output contract, filled in by the backend when it serves the pages:
  * - every `{{key}}` becomes `__TW_SETTING_key__`; the masthead has `__TW_SETTING_app_version__`;
  * - gated blocks are wrapped in `<!--tw-feature:X-->…<!--/tw-feature:X-->`, never nested; `contact`
- *   wraps every sentence with the contact address (footer, about section);
+ *   wraps every sentence with the contact address (masthead note, footer, about section);
  * - the privacy shell has `__TW_PRIVACY_NOTICE__`, `__TW_NOTICE_LANG__` and `__TW_NOTICE_FALLBACK__`
  *   (a one-line note when the notice is in the other language, else empty);
  * - asset URLs (css, logo, shots, diagrams) end in `?v=<build date>`; fonts are referenced from the CSS;
@@ -65,6 +65,9 @@ const TEXT = {
     enlarge: 'Zum Vergrößern klicken',
     close: 'Schließen',
     contact: 'Fragen oder Probleme? Schreiben Sie an',
+    noteLabel: 'Hinweis',
+    note: 'Dieses Handbuch wurde mit Unterstützung von KI erstellt und mit dem laufenden System abgeglichen. Fehler sind trotzdem möglich.',
+    noteContact: 'Hinweise bitte an',
     legal: 'Rechtliches',
     privacy: 'Datenschutzhinweise',
     privacyUniversity: 'Datenschutzerklärung der Universität',
@@ -86,6 +89,9 @@ const TEXT = {
     enlarge: 'Click to enlarge',
     close: 'Close',
     contact: 'Questions or problems? Write to',
+    noteLabel: 'Note',
+    note: 'This guide was written with the help of AI and checked against the running system. Errors are still possible.',
+    noteContact: 'Please report them to',
     legal: 'Legal',
     privacy: 'Privacy notice',
     privacyUniversity: 'University privacy policy',
@@ -231,7 +237,8 @@ function assetSrc(src: string, o: SectionOptions): string | null {
   return m ? `${o.prefix}static/assets/${o.lang}/${m[1]}${o.version}` : null
 }
 
-const CONTACT_HREF = 'mailto:__TW_SETTING_contact_email__'
+const CONTACT = '__TW_SETTING_contact_email__'
+const CONTACT_HREF = `mailto:${CONTACT}`
 
 function linksToContact(node: ElementContent): boolean {
   if (node.type !== 'element') return false
@@ -346,7 +353,7 @@ function languageSwitch(lang: GuideLang, links: PageLinks): string {
   return `<nav class="lang" aria-label="${TEXT[lang].language}">${items.join('')}</nav>`
 }
 
-function masthead(lang: GuideLang, logoSvg: string, eyebrow: string, lede: string | null, meta: string[], links: PageLinks): string {
+function masthead(lang: GuideLang, logoSvg: string, eyebrow: string, lede: string | null, meta: string[], note: string | null, links: PageLinks): string {
   const t = TEXT[lang]
   return `<header class="masthead">
 <div class="masthead-inner">
@@ -358,7 +365,7 @@ ${lede ? `<p class="lede">${esc(lede)}</p>\n` : ''}<div class="meta">
 ${meta.join('\n')}
 ${languageSwitch(lang, links)}
 </div>
-</div>
+${note ? `${note}\n` : ''}</div>
 <a class="cta" href="${links.app}">${esc(t.cta)} <span aria-hidden="true">→</span></a>
 </div>
 </header>`
@@ -366,14 +373,13 @@ ${languageSwitch(lang, links)}
 
 function footer(lang: GuideLang, links: PageLinks, privacyIsCurrent: boolean): string {
   const t = TEXT[lang]
-  const contact = '__TW_SETTING_contact_email__'
   const privacy = `<li><a href="${links.privacy}"${privacyIsCurrent ? ' aria-current="page"' : ''}>${esc(t.privacy)}</a></li>`
   const external = (['privacyUniversity', 'imprint', 'accessibility'] as const).map(
     (k) => `<li><a href="${UNIVERSITY_LINKS[k]}" target="_blank" rel="noopener">${esc(t[k])}</a></li>`,
   )
   return `<footer class="foot">
 <div class="foot-inner">
-${gated('contact', `<p>${esc(t.contact)} <a href="mailto:${contact}">${contact}</a>.</p>`)}
+${gated('contact', `<p>${esc(t.contact)} <a href="${CONTACT_HREF}">${CONTACT}</a>.</p>`)}
 <nav aria-label="${esc(t.legal)}"><ul class="legal">
 ${gated('privacy', privacy)}
 ${external.join('\n')}
@@ -412,11 +418,13 @@ export function renderGuidePage(input: GuidePageInput): string {
     `<span><b>${t.asOf}</b> <time datetime="${input.builtOn}">${formatDate(input.builtOn, lang)}</time></span>`,
     `<span><b>${t.version}</b> __TW_SETTING_app_version__</span>`,
   ]
+  // The guide is AI-assisted and checked against the running app; the privacy page is the operator's own text.
+  const note = `<p class="note"><b>${esc(t.noteLabel)}</b> ${esc(t.note)}${gated('contact', ` ${esc(t.noteContact)} <a href="${CONTACT_HREF}">${CONTACT}</a>.`)}</p>`
 
   return `${head(lang, t.guide, t.lede, links.root, versionQuery(input.builtOn))}
 <body>
 <a class="skip" href="#main">${esc(t.skip)}</a>
-${masthead(lang, input.logoSvg, t.guide, t.lede, meta, links)}
+${masthead(lang, input.logoSvg, t.guide, t.lede, meta, note, links)}
 <div class="wrap">
 <nav class="toc" aria-label="${esc(t.toc)}">
 ${toc.join('\n')}
@@ -438,7 +446,7 @@ export function renderPrivacyShell(lang: GuideLang, logoSvg: string, builtOn: st
   return `${head(lang, t.privacy, t.privacy, links.root, versionQuery(builtOn))}
 <body>
 <a class="skip" href="#main">${esc(t.skip)}</a>
-${masthead(lang, logoSvg, t.privacy, null, [`<span>${back}</span>`], links)}
+${masthead(lang, logoSvg, t.privacy, null, [`<span>${back}</span>`], null, links)}
 <div class="wrap single">
 <main id="main">
 __TW_NOTICE_FALLBACK__

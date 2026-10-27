@@ -93,3 +93,46 @@ async def test_secure_delete_overwrites_content(tmp_path):
         if os.path.exists(p)
     )
     assert b"SECRET-MARKER-7d1f" not in leftover
+
+
+def _legacy_analyses_db(db_path):
+    """A database whose analyses table predates the `id` column."""
+    import sqlite3
+
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """CREATE TABLE analyses (
+               transcription_id TEXT,
+               analysis_json TEXT,
+               template TEXT,
+               custom_prompt TEXT,
+               language TEXT,
+               llm_provider TEXT,
+               llm_model TEXT,
+               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+           )"""
+    )
+    conn.execute(
+        "INSERT INTO analyses (transcription_id, analysis_json, template) "
+        "VALUES ('legacy-txn', '{\"summary\": \"x\"}', 'summary')"
+    )
+    conn.commit()
+    conn.close()
+
+
+@pytest.mark.asyncio
+async def test_legacy_analyses_table_migrates_in_one_start(tmp_path):
+    db_path = str(tmp_path / "legacy_analyses.db")
+    _legacy_analyses_db(db_path)
+
+    await init_db(db_path)  # must not raise on the first start
+
+    async with get_db(db_path) as db:
+        cursor = await db.execute("PRAGMA table_info(analyses)")
+        columns = {row[1] for row in await cursor.fetchall()}
+        cursor = await db.execute(
+            "SELECT transcription_id, source FROM analyses"
+        )
+        rows = await cursor.fetchall()
+    assert {"id", "source", "source_hash"} <= columns
+    assert [(r[0], r[1]) for r in rows] == [("legacy-txn", "original")]
