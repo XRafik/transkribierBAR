@@ -146,4 +146,31 @@ describe('useMediaRecorder has_video reporting', () => {
     expect(result.current.hasVideo).toBe(false)
     expect(result.current.blob?.type.startsWith('audio')).toBe(true)
   })
+
+  it('reports hasVideo false when the recorder cannot be created for a camera stream', async () => {
+    vi.stubGlobal('MediaRecorder', class extends FakeMediaRecorder {
+      constructor(stream: FakeStream, opts?: { mimeType?: string }) {
+        super(stream, opts)
+        throw new DOMException('unsupported', 'NotSupportedError')
+      }
+    })
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: { getUserMedia: async (c: { video?: unknown }) => (c.video ? cam() : mic()) },
+    })
+    const { result } = renderHook(() => useMediaRecorder({ useCamera: true }))
+    await act(async () => {
+      await result.current.start()
+    })
+    expect(result.current.state).toBe('idle')
+    expect(result.current.hasVideo).toBe(false)
+  })
+
+  it('reports hasVideo false after a camera recording is discarded', async () => {
+    const result = await runRecording({ useCamera: true, cameraOutcome: cam })
+    act(() => {
+      result.current.discard()
+    })
+    expect(result.current.hasVideo).toBe(false)
+  })
 })

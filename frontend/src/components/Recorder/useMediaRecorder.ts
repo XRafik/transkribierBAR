@@ -327,7 +327,6 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}): UseMedi
       setStream(recordingStream)
 
       const hasVideo = !!options.useCamera && !options.captureSystemAudio && !!recordingStream.getVideoTracks().length
-      setHasVideo(hasVideo)
       const mimeType = getPreferredMimeType(hasVideo)
       const recorder = new MediaRecorder(recordingStream, mimeType ? { mimeType } : undefined)
 
@@ -356,6 +355,8 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}): UseMedi
 
       recorderRef.current = recorder
       recorder.start(1000)
+      // Only once the recorder runs, so a failed start never reports video
+      setHasVideo(hasVideo)
       setState('recording')
       startTimer()
     } catch (err) {
@@ -401,6 +402,7 @@ export function useMediaRecorder(options: UseMediaRecorderOptions = {}): UseMedi
     }
     stopAllTracks()
     setBlob(null)
+    setHasVideo(false)
     chunksRef.current = []
     resetTimer()
     setState('idle')

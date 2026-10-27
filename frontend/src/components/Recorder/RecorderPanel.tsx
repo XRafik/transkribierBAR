@@ -38,12 +38,13 @@ export function RecorderPanel() {
 
   const videoPreviewRef = useRef<HTMLVideoElement>(null)
 
-  // Webcam preview
+  // Webcam preview, only when the stream really carries video (the camera can
+  // be denied and fall back to audio only while the toggle stays on)
   useEffect(() => {
-    if (videoPreviewRef.current && stream && useCamera) {
+    if (videoPreviewRef.current && stream && hasVideo) {
       videoPreviewRef.current.srcObject = stream
     }
-  }, [stream, useCamera])
+  }, [stream, hasVideo])
 
   // Tell the store a recording is at stake so every leave path asks first.
   const setRecordingActive = useStore((s) => s.setRecordingActive)
@@ -152,7 +153,7 @@ export function RecorderPanel() {
       {/* Video preview or audio level meter */}
       {state !== 'stopped' && (
         <div className="flex justify-center">
-          {useCamera && !captureSystemAudio && stream ? (
+          {hasVideo && stream ? (
             <video
               ref={videoPreviewRef}
               autoPlay
